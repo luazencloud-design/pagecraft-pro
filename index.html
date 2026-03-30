@@ -649,17 +649,28 @@ dz.ondrop = e => { e.preventDefault(); dz.classList.remove('drag'); handleFiles(
 
 // 핵심 변경 함수: 업로드 즉시 누끼 따기 실행
 async function handleFiles(files) {
+  // 라이브러리 로드 확인
+  if (typeof imglyRemoveBackground === 'undefined') {
+    toast('⚠ 라이브러리 로딩 중입니다. 잠시 후 다시 시도해주세요.');
+    return;
+  }
+
   const filesToProcess = [...files].slice(0, 5 - imgs.length);
-  
-  // 1. 먼저 사진 배열에 껍데기(로딩 상태)를 만듭니다.
   const startIndex = imgs.length;
+  
   filesToProcess.forEach(f => {
     if (!f.type.startsWith('image/')) return;
-    imgs.push({ name: f.name, data: null, processing: true }); // processing 상태 추가
+    imgs.push({ name: f.name, data: null, processing: true });
   });
-  renderThumbs(); // 로딩 화면 표시
+  renderThumbs();
 
-  // 2. 순차적으로 누끼 따기를 진행합니다.
+  // 누끼 따기 설정 옵션
+  const config = {
+    publicPath: "https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.4.5/dist/", // 모델 경로 명시
+    debug: false,
+    device: 'cpu', // 저사양 PC 배려
+  };
+
   for (let i = 0; i < filesToProcess.length; i++) {
     const file = filesToProcess[i];
     if (!file.type.startsWith('image/')) continue;
@@ -667,30 +678,27 @@ async function handleFiles(files) {
     const currentIndex = startIndex + i;
 
     try {
-      // AI 배경 제거 실행 (파일 객체를 그대로 전달)
-      const nukkiBlob = await imglyRemoveBackground(file);
+      // 배경 제거 실행 (설정값 포함)
+      const nukkiBlob = await imglyRemoveBackground(file, config);
       
-      // 결과(Blob)를 Base64로 변환
       const reader = new FileReader();
       reader.readAsDataURL(nukkiBlob);
-      await new Promise(resolve => {
+      await new Promise((resolve, reject) => {
         reader.onloadend = () => {
-          // 배열 데이터 업데이트 및 로딩 상태 해제
           imgs[currentIndex].data = reader.result;
           imgs[currentIndex].processing = false;
           resolve();
         };
+        reader.onerror = reject;
       });
     } catch (error) {
-      console.error("자동 누끼 실패:", error);
+      console.error("누끼 에러 상세:", error); // F12 콘솔에서 구체적 원인 확인 가능
       imgs[currentIndex].processing = false;
-      imgs[currentIndex].data = "error"; // 에러 표시용
-      toast(`⚠ '${file.name}' 누끼 따기에 실패했습니다.`);
+      imgs[currentIndex].data = "error";
+      toast(`❌ '${file.name}' 배경 제거 실패`);
     }
-    renderThumbs(); // 1장 완료될 때마다 썸네일 갱신
+    renderThumbs();
   }
-  
-  if(filesToProcess.length > 0) toast('✨ 상품 사진 누끼 작업이 완료되었습니다.');
 }
 
 // 썸네일 렌더링 (투명 배경용 패턴 적용)
