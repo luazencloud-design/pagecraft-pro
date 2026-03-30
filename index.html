@@ -93,7 +93,7 @@ const loadSteps = [
   ['마무리 중...','거의 다 됐어요!'],
 ];
 
-// ── 생성 (오타 수정됨: ddocument -> document) ──
+// ── 생성 (오타 수정완료: document) ─────────────────────
 document.getElementById('genBtn').onclick = async function() {
   const brand = document.getElementById('brand').value.trim();
   const pname = document.getElementById('pname').value.trim();
@@ -160,7 +160,12 @@ document.getElementById('genBtn').onclick = async function() {
     }
 
     const data = await resp.json();
-    let raw = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    let raw = "";
+    if (data.candidates && data.candidates[0].content && data.candidates[0].content.parts) {
+      raw = data.candidates[0].content.parts[0].text;
+    } else {
+      throw new Error("API 응답 구조가 올바르지 않습니다.");
+    }
     
     let parsed;
     try {
@@ -349,7 +354,11 @@ async function runTitleGen() {
       parsed = JSON.parse(raw.trim());
     } catch (e) {
       const match = raw.match(/\{[\s\S]*\}/);
-      parsed = JSON.parse(match[0].replace(/[\u0000-\u001F]/g, ""));
+      if(match) {
+        parsed = JSON.parse(match[0].replace(/[\u0000-\u001F]/g, ""));
+      } else {
+        throw new Error("상품명 파싱 실패");
+      }
     }
     const titles = parsed.titles || [];
 
@@ -422,7 +431,11 @@ async function runTagGen() {
       parsed = JSON.parse(raw.trim());
     } catch (e) {
       const match = raw.match(/\{[\s\S]*\}/);
-      parsed = JSON.parse(match[0].replace(/[\u0000-\u001F]/g, ""));
+      if(match) {
+        parsed = JSON.parse(match[0].replace(/[\u0000-\u001F]/g, ""));
+      } else {
+        throw new Error("태그 파싱 실패");
+      }
     }
     const tags = parsed.tags || [];
 
