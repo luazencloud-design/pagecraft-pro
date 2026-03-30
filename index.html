@@ -892,6 +892,211 @@ function downloadImg() {
   }
 }
 // ── 상품명 최적화 생성 ───────────────────────
+document.getElementById('genBtn').onclick = async function() {
+  const brand = document.getElementById('brand').value.trim();
+  const pname = document.getElementById('pname').value.trim();
+  const price = document.getElementById('price').value.trim();
+  const cat   = document.getElementById('cat').value;
+  const pf    = document.getElementById('pf').value;
+  const memo  = document.getElementById('memo').value.trim();
+  const feats = selF.length ? selF.join(', ') : '없음';
+
+  const btn = this;
+  btn.disabled = true;
+  btn.classList.add('loading');
+
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('resultPreview').classList.remove('show');
+  document.getElementById('errBox').classList.remove('show');
+  document.getElementById('loadingState').classList.add('show');
+
+  let si = 0;
+  const timer = setInterval(() => {
+    const s = loadSteps[si++ % loadSteps.length];
+    document.getElementById('loadMsg').textContent = s[0];
+    document.getElementById('loadSub').textContent = s[1];
+  }, 1600);
+
+  // Gemini API 이미지 규격으로 변경
+  const imgParts = imgs.slice(0,3).map(im => ({
+    inlineData: {
+      mimeType: im.data.split(';')[0].split(':')[1],
+      data: im.data.split(',')[1]
+    }
+  }));
+
+  const sys = `당신은 한국 쇼핑몰 상품 상세페이지 전문 카피라이터입니다. 반드시 순수 JSON만 출력하세요. 코드블록, 마크다운, 설명 없이 JSON 객체만 반환하세요.`;
+  const usr = `상품 이미지를 분석하여 JSON 생성:
+브랜드:${brand||'이미지에서판단'}, 상품명:${pname||'이미지에서판단'}, 가격:${price||'미입력'}, 카테고리:${cat}, 특징:${feats}, 플랫폼:${pf}, 메모:${memo||'없음'}
+
+{"product_name":"상품명(40자이내)","subtitle":"서브타이틀(20자이내)","main_copy":"메인카피1~2줄","selling_points":["포인트1","포인트2","포인트3"],"description":"상세설명3문단(\\n구분)","specs":[{"key":"브랜드","value":"..."},{"key":"소재","value":"..."},{"key":"사이즈","value":"..."},{"key":"색상","value":"..."},{"key":"원산지","value":"..."},{"key":"세탁방법","value":"..."},{"key":"추천계절","value":"..."}],"keywords":["키워드1","키워드2","키워드3","키워드4","키워드5"],"caution":"주의사항2~3가지"}`;
+
+  try {
+    const resp = await fetch('/api/generate', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      // Gemini API 페이로드 규격 적용
+      body: JSON.stringify({
+        model: 'gemini-2.5-flash',
+        systemInstruction: { parts: [{ text: sys }] },
+        contents: [{ role: 'user', parts: [...imgParts, { text: usr }] }],
+        generationConfig: { responseMimeType: "application/json", maxOutputTokens: 1500 }
+      })
+    });
+
+    clearInterval(timer);
+
+    if (!resp.ok) {
+      let errMsg = `서버 오류 (${resp.status})`;
+      try {
+        const e = await resp.json();
+        if (typeof e.error === 'string') errMsg = e.error;
+        else if (typeof e.error === 'object' && e.error?.message) errMsg = e.error.message;
+        else if (typeof e.message === 'string') errMsg = e.message;
+        else errMsg = `HTTP ${resp.status}: ${JSON.stringify(e).slice(0,120)}`;
+      } catch(_) { errMsg = `서버 응답 오류 (${resp.status}) — API 키를 확인해주세요`; }
+      throw new Error(errMsg);
+    }
+
+    const data = await resp.json();
+    // Gemini API 응답 파싱
+    const raw = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    const clean = raw.replace(/```json\s*/gi,'').replace(/```\s*/g,'').trim();
+    let parsed;
+    try { parsed = JSON.parse(clean); }
+    catch { const m = clean.match(/\{[\s\S]*\}/); if(m) parsed=JSON.parse(m[0]); else throw new Error('파싱실패'); }
+
+    resultData = parsed;
+
+    // 이미지 렌더링 요청
+    document.getElementById('loadMsg').textContent = '이미지 렌더링 중...';
+    document.getElementById('loadSub').textContent = '상세페이지를 이미지로 변환 중';
+
+    const renderResp = await fetch('/api/render', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        data: parsed,
+        price: price,
+        images: imgs.slice(0,3).map(im=>im.data)
+      })
+    });
+
+    document.getElementById('loadingState').classList.remove('show');
+
+    if (renderResp.ok) {
+      const blob = await renderResp.blob();
+      generatedImgDataUrl = URL.createObjectURL(blob);
+      document.getElementById('previewImg').src = generatedImgDataUrl;
+      document.getElementById('resultPreview').classList.add('show');
+    } else {
+      // 렌더 실패시 텍스트만 표시
+      showTextResult(parsed, price);
+    }
+
+    renderPanel(parsed);
+    document.getElementById('copyAllBtn').style.display = 'flex';
+    document.getElementById('dlBtn').style.display = 'flex';
+    toast('✅ 상세페이지 생성 완료!');
+
+  } catch(e) {
+    clearInterval(timer);
+    document.getElementById('loadingState').classList.remove('show');
+    document.getElementById('emptyState').style.display = 'flex';
+    const eb = document.getElementById('errBox');
+    let errText = '알 수 없는 오류가 발생했습니다';
+    if (e instanceof Error) errText = e.message;
+    else if (typeof e === 'string') errText = e;
+    else if (e && typeof e === 'object') {
+      errText = e.message || e.error?.message || e.error || JSON.stringify(e).slice(0,150);
+    }
+    const tips = errText.includes('401') || errText.includes('API 키')
+      ? '<br><span style="font-size:11px;opacity:0.7">→ Vercel 환경변수 GEMINI_API_KEY를 확인해주세요</span>'
+      : errText.includes('fetch') || errText.includes('network') || errText.includes('Failed')
+      ? '<br><span style="font-size:11px;opacity:0.7">→ 네트워크 연결을 확인해주세요</span>'
+      : errText.includes('파싱') || errText.includes('JSON')
+      ? '<br><span style="font-size:11px;opacity:0.7">→ AI 응답 형식 오류입니다. 다시 시도해주세요</span>'
+      : '';
+    eb.innerHTML = `❌ <strong>오류 발생</strong><br><span style="font-size:11px;opacity:0.8">${errText}</span>${tips}`;
+    eb.classList.add('show');
+  }
+
+  btn.disabled = false;
+  btn.classList.remove('loading');
+};
+
+function showTextResult(d, priceInput) {
+  // API 렌더링 실패시 HTML 미리보기 표시
+  const priceNum = priceInput ? parseInt(priceInput.replace(/[^0-9]/g,''),10) : null;
+  const priceHtml = priceNum ? `<div style="font-size:20px;font-weight:700;color:#e8c97a;margin-top:8px">${priceNum.toLocaleString()}원</div>` : '';
+  const specs = (d.specs||[]).map(s=>`<tr><td style="padding:8px;color:#888;font-size:12px;font-weight:600;border-bottom:1px solid #222">${s.key}</td><td style="padding:8px;color:#ccc;font-size:12px;border-bottom:1px solid #222">${s.value}</td></tr>`).join('');
+  const kws = (d.keywords||[]).map(k=>`<span style="display:inline-block;padding:4px 10px;border:1px solid #333;border-radius:20px;font-size:11px;color:#888;margin:3px">#${k}</span>`).join('');
+
+  document.getElementById('resultPreview').innerHTML = `
+  <div style="background:#13131a;padding:24px;font-family:'Noto Sans KR',sans-serif;color:#f0ede8">
+    <div style="font-size:10px;letter-spacing:2px;color:#e8c97a;margin-bottom:8px">상품명</div>
+    <div style="font-size:18px;font-weight:700;margin-bottom:4px">${d.product_name||''}</div>
+    <div style="font-size:13px;color:#9998a8;margin-bottom:4px">${d.subtitle||''}</div>
+    ${priceHtml}
+    <div style="height:1px;background:#222;margin:16px 0"></div>
+    <div style="font-size:10px;letter-spacing:2px;color:#e8c97a;margin-bottom:8px">메인 카피</div>
+    <div style="font-size:15px;font-weight:600;line-height:1.6">${(d.main_copy||'').replace(/\n/g,'<br>')}</div>
+    <div style="height:1px;background:#222;margin:16px 0"></div>
+    <div style="font-size:10px;letter-spacing:2px;color:#e8c97a;margin-bottom:10px">판매 포인트</div>
+    ${(d.selling_points||[]).map(p=>`<div style="display:flex;gap:8px;margin-bottom:8px;font-size:13px;color:#ccc"><span style="color:#3ecf8e">✓</span>${p}</div>`).join('')}
+    <div style="height:1px;background:#222;margin:16px 0"></div>
+    <div style="font-size:10px;letter-spacing:2px;color:#e8c97a;margin-bottom:8px">스펙 표</div>
+    <table style="width:100%;border-collapse:collapse">${specs}</table>
+    <div style="height:1px;background:#222;margin:16px 0"></div>
+    <div style="font-size:10px;letter-spacing:2px;color:#e8c97a;margin-bottom:8px">검색 키워드</div>
+    <div>${kws}</div>
+  </div>`;
+  document.getElementById('resultPreview').classList.add('show');
+}
+
+function renderPanel(d) {
+  const blocks = [
+    {title:'상품명', body:`${d.product_name}\n${d.subtitle}`},
+    {title:'메인 카피', body:d.main_copy},
+    {title:'판매 포인트', body:(d.selling_points||[]).map((p,i)=>`${i+1}. ${p}`).join('\n')},
+    {title:'상세 설명', body:d.description},
+    {title:'스펙 표', body:(d.specs||[]).map(s=>`${s.key}: ${s.value}`).join('\n')},
+    {title:'검색 키워드', body:(d.keywords||[]).join(', ')},
+    {title:'주의사항', body:d.caution},
+  ];
+  document.getElementById('panelCopy').innerHTML = blocks.map(b=>`
+    <div class="copy-block">
+      <div class="copy-block-hdr">
+        <span class="copy-block-title">${b.title}</span>
+        <button class="copy-btn" onclick="cp(this,'${esc(b.body)}')">📋 복사</button>
+      </div>
+      <div class="copy-block-body">${(b.body||'').replace(/\n/g,'<br>')}</div>
+    </div>`).join('');
+}
+
+function esc(s){ return (s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/\n/g,'\\n'); }
+function cp(btn, text) {
+  navigator.clipboard.writeText(text.replace(/\\n/g,'\n'));
+  btn.textContent='✓ 복사됨'; btn.classList.add('ok');
+  setTimeout(()=>{ btn.textContent='📋 복사'; btn.classList.remove('ok'); },1500);
+}
+function copyAll() {
+  if (!resultData) return;
+  const d = resultData;
+  const t = `[상품명]\n${d.product_name}\n\n[서브타이틀]\n${d.subtitle}\n\n[메인카피]\n${d.main_copy}\n\n[판매포인트]\n${(d.selling_points||[]).join('\n')}\n\n[상세설명]\n${d.description}\n\n[스펙]\n${(d.specs||[]).map(s=>s.key+': '+s.value).join('\n')}\n\n[키워드]\n${(d.keywords||[]).join(', ')}\n\n[주의사항]\n${d.caution}`;
+  navigator.clipboard.writeText(t);
+  toast('📋 전체 내용이 복사되었습니다!');
+}
+function downloadImg() {
+  if (generatedImgDataUrl) {
+    const a = document.createElement('a');
+    a.href = generatedImgDataUrl;
+    a.download = `${(resultData?.product_name||'상세페이지').replace(/\s/g,'_')}.png`;
+    a.click();
+    toast('⬇ 이미지가 저장되었습니다!');
+  } else {
+    toast('⚠ 먼저 상세페이지를 생성해주세요');
+  }
+}
+// ── 상품명 최적화 생성 ───────────────────────
 async function runTitleGen() {
   const brand = document.getElementById('brand').value.trim();
   const pname = document.getElementById('pname').value.trim();
@@ -938,15 +1143,19 @@ async function runTitleGen() {
   try {
     const resp = await fetch('/api/generate', {
       method:'POST', headers:{'Content-Type':'application/json'},
+      // Gemini API 페이로드 규격 적용
       body: JSON.stringify({
-        model:'claude-sonnet-4-20250514', max_tokens:800,
-        system: sys,
-        messages:[{role:'user', content:[{type:'text',text:usr}]}]
+        model: 'gemini-2.5-flash',
+        systemInstruction: { parts: [{ text: sys }] },
+        contents: [{ role: 'user', parts: [{ text: usr }] }],
+        generationConfig: { responseMimeType: "application/json", maxOutputTokens: 800 }
       })
     });
     if (!resp.ok) throw new Error(`서버 오류 (${resp.status})`);
+    
     const data = await resp.json();
-    const raw = (data.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('');
+    // Gemini API 응답 파싱
+    const raw = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
     const clean = raw.replace(/```json\s*/gi,'').replace(/```\s*/g,'').trim();
     const parsed = JSON.parse(clean);
     const titles = parsed.titles || [];
@@ -1004,15 +1213,19 @@ async function runTagGen() {
   try {
     const resp = await fetch('/api/generate', {
       method:'POST', headers:{'Content-Type':'application/json'},
+      // Gemini API 페이로드 규격 적용
       body: JSON.stringify({
-        model:'claude-sonnet-4-20250514', max_tokens:500,
-        system: sys,
-        messages:[{role:'user', content:[{type:'text',text:usr}]}]
+        model: 'gemini-2.5-flash',
+        systemInstruction: { parts: [{ text: sys }] },
+        contents: [{ role: 'user', parts: [{ text: usr }] }],
+        generationConfig: { responseMimeType: "application/json", maxOutputTokens: 500 }
       })
     });
     if (!resp.ok) throw new Error(`서버 오류 (${resp.status})`);
+    
     const data = await resp.json();
-    const raw = (data.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('');
+    // Gemini API 응답 파싱
+    const raw = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
     const clean = raw.replace(/```json\s*/gi,'').replace(/```\s*/g,'').trim();
     const parsed = JSON.parse(clean);
     const tags = parsed.tags || [];
