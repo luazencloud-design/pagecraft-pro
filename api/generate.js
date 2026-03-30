@@ -11,13 +11,21 @@ export default async function handler(req, res) {
   if (!apiKey) return res.status(500).json({ error: 'API 키가 설정되지 않았습니다.' });
 
   try {
+    // 1. 안전한 JSON 파싱 (문자열로 넘어올 경우 대비)
+    const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+    
     // 프론트엔드에서 넘어온 페이로드 추출
-    const { model, systemInstruction, contents, generationConfig } = req.body;
+    const { model, systemInstruction, contents, generationConfig } = body;
     
-    // 프론트엔드에서 모델을 명시하지 않았을 경우의 기본값
+    // 2. contents 누락 방어 로직 (에러 디버깅용)
+    if (!contents || !Array.isArray(contents) || contents.length === 0) {
+      console.error("요청 바디 확인:", body); // Vercel 로그에서 원인 파악 가능
+      return res.status(400).json({ 
+        error: "contents 데이터가 누락되었습니다. 프론트엔드에서 데이터를 제대로 보내고 있는지 확인해주세요." 
+      });
+    }
+
     const targetModel = model || 'gemini-2.5-flash';
-    
-    // Gemini API 엔드포인트 URL 구성 (쿼리 파라미터로 API 키 전달)
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${targetModel}:generateContent?key=${apiKey}`;
 
     const response = await fetch(url, {
@@ -25,25 +33,25 @@ export default async function handler(req, res) {
       headers: {
         'Content-Type': 'application/json'
       },
-      // Gemini 규격에 맞는 페이로드 재조립
+      // 빈 값이 있는 속성은 제거하고 유효한 데이터만 전송
       body: JSON.stringify({
-        systemInstruction,
+        ...(systemInstruction && { systemInstruction }),
         contents,
-        generationConfig
+        ...(generationConfig && { generationConfig })
       })
     });
 
     const data = await response.json();
     
-    // API 에러 처리
     if (!response.ok) {
+      console.error("Gemini API 에러:", data);
       return res.status(response.status).json(data);
     }
     
-    // 성공 응답 반환
     return res.status(200).json(data);
     
   } catch (err) {
+    console.error("서버 내부 에러:", err);
     return res.status(500).json({ error: err.message });
   }
 }
