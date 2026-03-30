@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PageCraft Pro v2.0 — 상품 상세페이지 · 상품명 · 태그 생성기</title>
+<title>PageCraft Pro — 상품 상세페이지 생성기</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Noto+Sans+KR:wght@300;400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -365,36 +365,6 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--f
 }
 .err-box.show{display:block}
 
-/* Tool Panels */
-.tool-section-header{margin-bottom:14px}
-.tool-section-title{font-size:13px;font-weight:600;color:var(--text);margin-bottom:6px}
-.tool-section-desc{font-size:11px;color:var(--text2);line-height:1.6}
-.tool-run-btn{
-  width:100%;padding:10px;border-radius:8px;
-  background:var(--accent);border:none;color:#0c0c10;
-  font-size:12.5px;font-weight:700;font-family:var(--font);cursor:pointer;
-  display:flex;align-items:center;justify-content:center;gap:8px;
-  transition:all 0.2s;
-}
-.tool-run-btn:hover:not(:disabled){background:var(--accent2);transform:translateY(-1px)}
-.tool-run-btn:disabled{background:var(--surface3);color:var(--text3);cursor:not-allowed;transform:none}
-.tool-spinner{width:13px;height:13px;border:2px solid rgba(12,12,16,0.3);border-top-color:#0c0c10;border-radius:50%;animation:spin 0.7s linear infinite;display:none}
-.tool-run-btn.loading .tool-spinner{display:block}
-.tool-run-btn.loading .tool-btn-txt{display:none}
-.title-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:11px 13px;margin-bottom:7px;position:relative}
-.title-rank{font-size:10px;font-weight:700;color:var(--accent);letter-spacing:1px;margin-bottom:5px}
-.title-text{font-size:12.5px;color:var(--text);line-height:1.5;padding-right:52px}
-.title-copy{position:absolute;top:11px;right:11px;padding:3px 9px;background:var(--surface3);border:1px solid var(--border);border-radius:5px;font-size:10px;color:var(--text2);cursor:pointer;font-family:var(--font);transition:all 0.15s}
-.title-copy:hover{border-color:var(--border2);color:var(--text)}
-.title-copy.ok{color:var(--green);border-color:var(--green)}
-.tag-cloud{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px}
-.tag-item{padding:4px 10px;border-radius:20px;font-size:11px;background:var(--surface2);border:1px solid var(--border);color:var(--text2);cursor:pointer;transition:all 0.15s;font-family:var(--font)}
-.tag-item:hover{border-color:var(--accent);color:var(--accent)}
-.tag-copy-all{width:100%;padding:9px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;font-size:12px;color:var(--text2);cursor:pointer;font-family:var(--font);transition:all 0.15s}
-.tag-copy-all:hover{border-color:var(--border2);color:var(--text)}
-.tag-copy-all.ok{color:var(--green);border-color:var(--green)}
-.tool-empty{text-align:center;padding:30px 16px;color:var(--text3);font-size:12px;line-height:1.7}
-
 /* Scrollbar global */
 ::-webkit-scrollbar{width:4px;height:4px}
 ::-webkit-scrollbar-thumb{background:var(--surface3);border-radius:2px}
@@ -537,40 +507,14 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--f
 <!-- ── RIGHT PANEL ── -->
 <aside class="right-panel">
   <div class="panel-tabs">
-    <button class="ptab active" data-tab="copy">📄 텍스트</button>
-    <button class="ptab" data-tab="title">✨ 상품명</button>
-    <button class="ptab" data-tab="tags">🏷 태그</button>
-    <button class="ptab" data-tab="export">⬇ 내보내기</button>
+    <button class="ptab active" data-tab="copy">복사용 텍스트</button>
+    <button class="ptab" data-tab="export">내보내기</button>
   </div>
 
   <div class="panel-body" id="panelCopy">
     <div style="text-align:center;padding:60px 16px;color:var(--text3);font-size:13px;line-height:1.8">
       생성 후 각 항목을<br>바로 복사할 수 있습니다
     </div>
-  </div>
-
-  <div class="panel-body" id="panelTitle" style="display:none">
-    <div class="tool-section-header">
-      <div class="tool-section-title">✨ 상품명 최적화</div>
-      <div class="tool-section-desc">SEO에 최적화된 상품명 5가지를 생성합니다.<br>검색 노출과 클릭률을 높이는 버전을 선택하세요.</div>
-    </div>
-    <button class="tool-run-btn" id="titleBtn" onclick="runTitleGen()">
-      <span class="tool-btn-txt">✨ 최적화 상품명 5개 생성</span>
-      <div class="tool-spinner"></div>
-    </button>
-    <div id="titleResult" style="margin-top:12px"></div>
-  </div>
-
-  <div class="panel-body" id="panelTags" style="display:none">
-    <div class="tool-section-header">
-      <div class="tool-section-title">🏷 쿠팡 태그 20개</div>
-      <div class="tool-section-desc">검색량과 연관성 기반의 쿠팡 최적화 태그를 생성합니다.</div>
-    </div>
-    <button class="tool-run-btn" id="tagsBtn" onclick="runTagGen()">
-      <span class="tool-btn-txt">🏷 태그 20개 생성</span>
-      <div class="tool-spinner"></div>
-    </button>
-    <div id="tagsResult" style="margin-top:12px"></div>
   </div>
 
   <div class="panel-body" id="panelExport" style="display:none">
@@ -591,7 +535,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--f
   <div style="display:flex;align-items:center;gap:5px"><div class="status-dot"></div><span>Ready</span></div>
   <span id="statusImgs">사진 0장</span>
   <span id="statusPf">플랫폼: 쿠팡</span>
-  <span class="status-right">PageCraft Pro v2.0</span>
+  <span class="status-right">PageCraft Pro v1.0</span>
 </div>
 </div>
 
@@ -664,22 +608,12 @@ document.getElementById('pf').onchange = function() {
 };
 
 // ── 탭 ───────────────────────────────────────
-const panelMap = {
-  copy:   'panelCopy',
-  title:  'panelTitle',
-  tags:   'panelTags',
-  export: 'panelExport',
-};
 document.querySelectorAll('.ptab').forEach(t => {
   t.onclick = () => {
     document.querySelectorAll('.ptab').forEach(x => x.classList.remove('active'));
     t.classList.add('active');
-    Object.values(panelMap).forEach(id => {
-      const el = document.getElementById(id);
-      if(el) el.style.display = 'none';
-    });
-    const target = panelMap[t.dataset.tab];
-    if(target) document.getElementById(target).style.display = 'block';
+    document.getElementById('panelCopy').style.display = t.dataset.tab==='copy' ? 'block' : 'none';
+    document.getElementById('panelExport').style.display = t.dataset.tab==='export' ? 'block' : 'none';
   };
 });
 
@@ -693,6 +627,7 @@ const loadSteps = [
 ];
 
 // ── 생성 ─────────────────────────────────────
+// ── 생성 (Gemini API 버전으로 수정) ─────────────────────────────────────
 document.getElementById('genBtn').onclick = async function() {
   const brand = document.getElementById('brand').value.trim();
   const pname = document.getElementById('pname').value.trim();
@@ -718,61 +653,75 @@ document.getElementById('genBtn').onclick = async function() {
     document.getElementById('loadSub').textContent = s[1];
   }, 1600);
 
-  const imgBlocks = imgs.slice(0,3).map(im => ({
-    type:'image',
-    source:{type:'base64', media_type:im.data.split(';')[0].split(':')[1], data:im.data.split(',')[1]}
+  // Gemini용 이미지 데이터 구성 (inline_data)
+  const imageParts = imgs.slice(0, 3).map(im => ({
+    inline_data: {
+      mime_type: im.data.split(';')[0].split(':')[1],
+      data: im.data.split(',')[1]
+    }
   }));
 
-  const sys = `당신은 한국 쇼핑몰 상품 상세페이지 전문 카피라이터입니다. 반드시 순수 JSON만 출력하세요. 코드블록, 마크다운, 설명 없이 JSON 객체만 반환하세요.`;
-  const usr = `상품 이미지를 분석하여 JSON 생성:
+  const systemInstruction = "당신은 한국 쇼핑몰 상품 상세페이지 전문 카피라이터입니다. 반드시 순수 JSON만 출력하세요. 마크다운 코드블록(```json) 없이 {로 시작해서 }로 끝나는 JSON 객체만 반환하세요.";
+  
+  const userPrompt = `상품 이미지를 분석하여 JSON 생성:
 브랜드:${brand||'이미지에서판단'}, 상품명:${pname||'이미지에서판단'}, 가격:${price||'미입력'}, 카테고리:${cat}, 특징:${feats}, 플랫폼:${pf}, 메모:${memo||'없음'}
 
+응답 양식:
 {"product_name":"상품명(40자이내)","subtitle":"서브타이틀(20자이내)","main_copy":"메인카피1~2줄","selling_points":["포인트1","포인트2","포인트3"],"description":"상세설명3문단(\\n구분)","specs":[{"key":"브랜드","value":"..."},{"key":"소재","value":"..."},{"key":"사이즈","value":"..."},{"key":"색상","value":"..."},{"key":"원산지","value":"..."},{"key":"세탁방법","value":"..."},{"key":"추천계절","value":"..."}],"keywords":["키워드1","키워드2","키워드3","키워드4","키워드5"],"caution":"주의사항2~3가지"}`;
 
+  export default async function handler(req, res) {
+  if (req.method !== 'POST') return res.status(405).send('Method Not Allowed');
+
+  // Vercel 환경변수에서 키를 가져옵니다 (브라우저에 노출 안 됨)
+  const API_KEY = process.env.GEMINI_API_KEY; 
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
+
   try {
-    const resp = await fetch('/api/generate', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({
-        model:'claude-sonnet-4-20250514', max_tokens:1500,
-        system: sys,
-        messages:[{role:'user', content:[...imgBlocks,{type:'text',text:usr}]}]
-      })
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(req.body) // 클라이언트에서 보낸 본문을 그대로 전달
     });
+
+    const data = await response.json();
+    res.status(response.status).json(data);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+}
 
     clearInterval(timer);
 
     if (!resp.ok) {
-      let errMsg = `서버 오류 (${resp.status})`;
-      try {
-        const e = await resp.json();
-        if (typeof e.error === 'string') errMsg = e.error;
-        else if (typeof e.error === 'object' && e.error?.message) errMsg = e.error.message;
-        else if (typeof e.message === 'string') errMsg = e.message;
-        else errMsg = `HTTP ${resp.status}: ${JSON.stringify(e).slice(0,120)}`;
-      } catch(_) { errMsg = `서버 응답 오류 (${resp.status}) — API 키를 확인해주세요`; }
-      throw new Error(errMsg);
+      const e = await resp.json().catch(() => ({}));
+      throw new Error(e.error?.message || `서버 오류 (${resp.status})`);
     }
 
     const data = await resp.json();
-    const raw = (data.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('');
-    const clean = raw.replace(/```json\s*/gi,'').replace(/```\s*/g,'').trim();
+    
+    // Gemini 응답 추출 (가장 중요한 부분)
+    const raw = data.candidates[0].content.parts[0].text;
+    
     let parsed;
-    try { parsed = JSON.parse(clean); }
-    catch { const m = clean.match(/\{[\s\S]*\}/); if(m) parsed=JSON.parse(m[0]); else throw new Error('파싱실패'); }
+    try {
+      parsed = JSON.parse(raw.trim());
+    } catch (err) {
+      // 마크다운 태그가 포함되어 올 경우를 대비한 정규식 추출
+      const match = raw.match(/\{[\s\S]*\}/);
+      if (match) parsed = JSON.parse(match[0]);
+      else throw new Error('JSON 파싱에 실패했습니다.');
+    }
 
     resultData = parsed;
 
-    // 이미지 렌더링 요청
+    // 이미지 렌더링 (이 부분은 사용하시는 백엔드 /api/render가 있다면 유지)
     document.getElementById('loadMsg').textContent = '이미지 렌더링 중...';
     document.getElementById('loadSub').textContent = '상세페이지를 이미지로 변환 중';
 
+    // ... (이후 렌더링 로직은 기존과 동일)
     const renderResp = await fetch('/api/render', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({
-        data: parsed,
-        price: price,
-        images: imgs.slice(0,3).map(im=>im.data)
-      })
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ data: parsed, price: price, images: imgs.slice(0, 3).map(im => im.data) })
     });
 
     document.getElementById('loadingState').classList.remove('show');
@@ -783,7 +732,6 @@ document.getElementById('genBtn').onclick = async function() {
       document.getElementById('previewImg').src = generatedImgDataUrl;
       document.getElementById('resultPreview').classList.add('show');
     } else {
-      // 렌더 실패시 텍스트만 표시
       showTextResult(parsed, price);
     }
 
@@ -792,26 +740,14 @@ document.getElementById('genBtn').onclick = async function() {
     document.getElementById('dlBtn').style.display = 'flex';
     toast('✅ 상세페이지 생성 완료!');
 
-  } catch(e) {
+  } catch (e) {
     clearInterval(timer);
     document.getElementById('loadingState').classList.remove('show');
     document.getElementById('emptyState').style.display = 'flex';
     const eb = document.getElementById('errBox');
-    let errText = '알 수 없는 오류가 발생했습니다';
-    if (e instanceof Error) errText = e.message;
-    else if (typeof e === 'string') errText = e;
-    else if (e && typeof e === 'object') {
-      errText = e.message || e.error?.message || e.error || JSON.stringify(e).slice(0,150);
-    }
-    const tips = errText.includes('401') || errText.includes('API 키')
-      ? '<br><span style="font-size:11px;opacity:0.7">→ Vercel 환경변수 ANTHROPIC_API_KEY를 확인해주세요</span>'
-      : errText.includes('fetch') || errText.includes('network') || errText.includes('Failed')
-      ? '<br><span style="font-size:11px;opacity:0.7">→ 네트워크 연결을 확인해주세요</span>'
-      : errText.includes('파싱') || errText.includes('JSON')
-      ? '<br><span style="font-size:11px;opacity:0.7">→ AI 응답 형식 오류입니다. 다시 시도해주세요</span>'
-      : '';
-    eb.innerHTML = `❌ <strong>오류 발생</strong><br><span style="font-size:11px;opacity:0.8">${errText}</span>${tips}`;
+    eb.textContent = '❌ ' + e.message;
     eb.classList.add('show');
+    console.error(e);
   }
 
   btn.disabled = false;
@@ -891,180 +827,6 @@ function downloadImg() {
     toast('⚠ 먼저 상세페이지를 생성해주세요');
   }
 }
-// ── 상품명 최적화 생성 ───────────────────────
-async function runTitleGen() {
-  const brand = document.getElementById('brand').value.trim();
-  const pname = document.getElementById('pname').value.trim();
-  const cat   = document.getElementById('cat').value;
-  const pf    = document.getElementById('pf').value;
-  const feats = selF.length ? selF.join(', ') : '';
-  const memo  = document.getElementById('memo').value.trim();
-
-  if (!resultData && !brand && !pname) {
-    document.getElementById('titleResult').innerHTML =
-      '<div class="tool-empty">먼저 상세페이지를 생성하거나<br>브랜드명/상품명을 입력해주세요.</div>';
-    return;
-  }
-
-  const btn = document.getElementById('titleBtn');
-  btn.disabled = true; btn.classList.add('loading');
-  document.getElementById('titleResult').innerHTML =
-    '<div class="tool-empty">AI가 최적화 상품명을 생성 중입니다...</div>';
-
-  const productInfo = resultData
-    ? `상품명: ${resultData.product_name}, 카테고리: ${cat}, 특징: ${(resultData.selling_points||[]).join(', ')}`
-    : `브랜드: ${brand}, 상품명: ${pname}, 카테고리: ${cat}, 특징: ${feats}, 메모: ${memo}`;
-
-  const sys = `당신은 쿠팡/스마트스토어 상품명 최적화 전문가입니다. 반드시 순수 JSON만 출력하세요.`;
-  const usr = `아래 상품 정보를 바탕으로 SEO 최적화된 상품명 5가지를 생성해주세요.
-
-상품 정보: ${productInfo}
-플랫폼: ${pf}
-
-규칙:
-- 각 상품명은 40자 이내
-- 검색량이 많은 키워드를 앞에 배치
-- 브랜드명, 소재, 특징, 사이즈/색상 정보 포함
-- 각각 다른 전략으로 작성 (키워드 중심, 특징 중심, 타깃 중심 등)
-
-{"titles": [
-  {"rank": 1, "strategy": "키워드 중심", "title": "..."},
-  {"rank": 2, "strategy": "특징 강조", "title": "..."},
-  {"rank": 3, "strategy": "타깃 명확화", "title": "..."},
-  {"rank": 4, "strategy": "브랜드 강조", "title": "..."},
-  {"rank": 5, "strategy": "혜택 중심", "title": "..."}
-]}`;
-
-  try {
-    const resp = await fetch('/api/generate', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({
-        model:'claude-sonnet-4-20250514', max_tokens:800,
-        system: sys,
-        messages:[{role:'user', content:[{type:'text',text:usr}]}]
-      })
-    });
-    if (!resp.ok) throw new Error(`서버 오류 (${resp.status})`);
-    const data = await resp.json();
-    const raw = (data.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('');
-    const clean = raw.replace(/```json\s*/gi,'').replace(/```\s*/g,'').trim();
-    const parsed = JSON.parse(clean);
-    const titles = parsed.titles || [];
-
-    document.getElementById('titleResult').innerHTML = titles.map(t => `
-      <div class="title-card">
-        <div class="title-rank">${t.rank}. ${t.strategy}</div>
-        <div class="title-text">${t.title}</div>
-        <button class="title-copy" onclick="cp(this,'${t.title.replace(/'/g,"\'")}')">복사</button>
-      </div>`).join('');
-
-    toast('✨ 최적화 상품명 5개 생성 완료!');
-  } catch(e) {
-    document.getElementById('titleResult').innerHTML =
-      `<div class="tool-empty" style="color:var(--red)">오류: ${e.message}</div>`;
-  }
-  btn.disabled = false; btn.classList.remove('loading');
-}
-
-// ── 쿠팡 태그 20개 생성 ──────────────────────
-async function runTagGen() {
-  const brand = document.getElementById('brand').value.trim();
-  const cat   = document.getElementById('cat').value;
-  const feats = selF.length ? selF.join(', ') : '';
-  const memo  = document.getElementById('memo').value.trim();
-
-  if (!resultData && !brand) {
-    document.getElementById('tagsResult').innerHTML =
-      '<div class="tool-empty">먼저 상세페이지를 생성하거나<br>브랜드명을 입력해주세요.</div>';
-    return;
-  }
-
-  const btn = document.getElementById('tagsBtn');
-  btn.disabled = true; btn.classList.add('loading');
-  document.getElementById('tagsResult').innerHTML =
-    '<div class="tool-empty">AI가 태그를 생성 중입니다...</div>';
-
-  const productInfo = resultData
-    ? `상품명: ${resultData.product_name}, 카테고리: ${cat}, 키워드: ${(resultData.keywords||[]).join(', ')}, 특징: ${(resultData.selling_points||[]).join(', ')}`
-    : `브랜드: ${brand}, 카테고리: ${cat}, 특징: ${feats}, 메모: ${memo}`;
-
-  const sys = `당신은 쿠팡 검색 최적화 전문가입니다. 반드시 순수 JSON만 출력하세요.`;
-  const usr = `아래 상품에 맞는 쿠팡 검색 태그 20개를 생성해주세요.
-
-상품 정보: ${productInfo}
-
-규칙:
-- 실제 쿠팡 검색량이 높은 키워드 중심
-- 브랜드명, 카테고리, 소재, 특징, 용도, 색상, 타깃 고객 등 다양하게
-- 각 태그는 2~10자 이내
-- 중복 없이 20개
-
-{"tags": ["태그1","태그2","태그3","태그4","태그5","태그6","태그7","태그8","태그9","태그10","태그11","태그12","태그13","태그14","태그15","태그16","태그17","태그18","태그19","태그20"]}`;
-
-  try {
-    const resp = await fetch('/api/generate', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({
-        model:'claude-sonnet-4-20250514', max_tokens:500,
-        system: sys,
-        messages:[{role:'user', content:[{type:'text',text:usr}]}]
-      })
-    });
-    if (!resp.ok) throw new Error(`서버 오류 (${resp.status})`);
-    const data = await resp.json();
-    const raw = (data.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('');
-    const clean = raw.replace(/```json\s*/gi,'').replace(/```\s*/g,'').trim();
-    const parsed = JSON.parse(clean);
-    const tags = parsed.tags || [];
-
-    const tagCloud = tags.map(tag =>
-      `<button class="tag-item" onclick="cpTag(this,'${tag.replace(/'/g,"\'")}')">
-        ${tag}
-      </button>`
-    ).join('');
-
-    document.getElementById('tagsResult').innerHTML = `
-      <div style="font-size:10px;color:var(--text3);margin-bottom:8px;letter-spacing:1px">
-        태그 클릭 시 개별 복사 · 아래 버튼으로 전체 복사
-      </div>
-      <div class="tag-cloud">${tagCloud}</div>
-      <button class="tag-copy-all" id="tagCopyAllBtn" onclick="cpAllTags(${JSON.stringify(tags).replace(/"/g,'&quot;')})">
-        📋 태그 20개 전체 복사
-      </button>`;
-
-    toast('🏷 태그 20개 생성 완료!');
-  } catch(e) {
-    document.getElementById('tagsResult').innerHTML =
-      `<div class="tool-empty" style="color:var(--red)">오류: ${e.message}</div>`;
-  }
-  btn.disabled = false; btn.classList.remove('loading');
-}
-
-function cpTag(btn, tag) {
-  navigator.clipboard.writeText(tag);
-  const orig = btn.textContent.trim();
-  btn.textContent = '✓';
-  btn.style.borderColor = 'var(--green)';
-  btn.style.color = 'var(--green)';
-  setTimeout(() => {
-    btn.textContent = orig;
-    btn.style.borderColor = '';
-    btn.style.color = '';
-  }, 1200);
-}
-
-function cpAllTags(tags) {
-  navigator.clipboard.writeText(tags.join(', '));
-  const btn = document.getElementById('tagCopyAllBtn');
-  btn.textContent = '✓ 복사됨!';
-  btn.classList.add('ok');
-  setTimeout(() => {
-    btn.textContent = '📋 태그 20개 전체 복사';
-    btn.classList.remove('ok');
-  }, 1500);
-  toast('🏷 태그 20개가 복사되었습니다!');
-}
-
 function toast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg; t.classList.add('show');
