@@ -758,18 +758,39 @@ ddocument.getElementById('genBtn').onclick = async function() {
       throw new Error(e.error?.message || e.message || `서버 에러 (${resp.status})`);
     }
 
-    const data = await resp.json();
-    const raw = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+const data = await resp.json();
     
+    // Gemini 응답 구조에서 텍스트 추출 (방어적 코딩)
+    let raw = "";
+    if (data.candidates && data.candidates[0].content && data.candidates[0].content.parts) {
+      raw = data.candidates[0].content.parts[0].text;
+    } else {
+      throw new Error("API 응답 구조가 올바르지 않습니다.");
+    }
+
+    console.log("AI 원본 응답:", raw); // 디버깅용
+
     let parsed;
     try {
-      parsed = JSON.parse(raw.trim());
+      // 1. 불필요한 마크다운 기호 제거 및 앞뒤 공백 제거
+      let clean = raw.replace(/```json/gi, '').replace(/```/g, '').trim();
+      
+      // 2. JSON 파싱 시도
+      parsed = JSON.parse(clean);
     } catch (e) {
-      const match = raw.match(/\{[\s\S]*\}/);
-      if (match) {
-        parsed = JSON.parse(match[0].replace(/[\u0000-\u001F]/g, ""));
-      } else {
-        throw new Error('파싱실패');
+      try {
+        // 3. 실패 시 { } 사이의 내용만 강제 추출
+        const match = raw.match(/\{[\s\S]*\}/);
+        if (match) {
+          // 제어 문자(탭, 줄바꿈 등)를 표준 공백으로 치환하여 파싱 성공률 향상
+          const sanitized = match[0].replace(/[\u0000-\u001F\u007F-\u009F]/g, "");
+          parsed = JSON.parse(sanitized);
+        } else {
+          throw new Error();
+        }
+      } catch (err) {
+        console.error("최종 파싱 실패 원본 데이터:", raw);
+        throw new Error('AI가 규격에 맞지 않는 답변을 보냈습니다. 다시 생성해 주세요.');
       }
     }
 
