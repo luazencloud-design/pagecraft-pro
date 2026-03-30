@@ -7,6 +7,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Noto+Sans+KR:wght@300;400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
+
+/* ── 다크 모드 (기본) ── */
 :root{
   --bg:#0c0c10;
   --surface:#13131a;
@@ -25,8 +27,51 @@
   --font:'Noto Sans KR',sans-serif;
   --mono:'DM Mono',monospace;
   --serif:'Playfair Display',serif;
+  --shadow:rgba(0,0,0,0.4);
 }
-html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--font);overflow:hidden}
+
+/* ── 라이트 모드 ── */
+:root.light{
+  --bg:#f4f3f0;
+  --surface:#ffffff;
+  --surface2:#f0eeeb;
+  --surface3:#e8e6e2;
+  --border:rgba(0,0,0,0.07);
+  --border2:rgba(0,0,0,0.14);
+  --accent:#9b6e1a;
+  --accent2:#7a5210;
+  --accent-dim:rgba(155,110,26,0.10);
+  --text:#1a1a1a;
+  --text2:#5a5a6a;
+  --text3:#aaaabc;
+  --green:#1a7a50;
+  --red:#c0392b;
+  --shadow:rgba(0,0,0,0.12);
+}
+
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--font);overflow:hidden;transition:background 0.3s,color 0.3s}
+
+/* ── 테마 전환 버튼 ── */
+.theme-toggle{
+  width:36px;height:20px;border-radius:10px;
+  background:var(--surface3);border:1px solid var(--border2);
+  cursor:pointer;position:relative;transition:background 0.2s,border-color 0.2s;
+  flex-shrink:0;
+}
+.theme-toggle:hover{border-color:var(--accent)}
+.theme-toggle-knob{
+  position:absolute;top:2px;left:2px;
+  width:14px;height:14px;border-radius:50%;
+  background:var(--text2);transition:transform 0.2s,background 0.2s;
+}
+:root.light .theme-toggle-knob{
+  transform:translateX(16px);
+  background:var(--accent);
+}
+.theme-label{
+  font-family:var(--mono);font-size:10px;color:var(--text3);
+  white-space:nowrap;transition:color 0.2s;
+}
 
 /* ── TITLEBAR ── */
 .titlebar{
@@ -333,6 +378,12 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--f
     <div class="tb-dot r"></div><div class="tb-dot a"></div><div class="tb-dot g"></div>
   </div>
   <div class="tb-logo">✦ PageCraft Pro</div>
+  <div style="display:flex;align-items:center;gap:8px">
+    <span class="theme-label" id="themeLabel">🌙 다크</span>
+    <div class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="라이트/다크 모드 전환">
+      <div class="theme-toggle-knob"></div>
+    </div>
+  </div>
   <div class="tb-badge">패션 · 의류 · 잡화</div>
 </div>
 
@@ -497,6 +548,28 @@ const imgs = [];
 let selF = [];
 let resultData = null;
 let generatedImgDataUrl = null;
+
+// ── 테마 전환 ─────────────────────────────────
+const root = document.documentElement;
+const savedTheme = localStorage.getItem('pagecraft-theme') || 'dark';
+if (savedTheme === 'light') applyLight();
+
+function toggleTheme() {
+  if (root.classList.contains('light')) {
+    root.classList.remove('light');
+    document.getElementById('themeLabel').textContent = '🌙 다크';
+    localStorage.setItem('pagecraft-theme', 'dark');
+  } else {
+    applyLight();
+    localStorage.setItem('pagecraft-theme', 'light');
+  }
+}
+
+function applyLight() {
+  root.classList.add('light');
+  const label = document.getElementById('themeLabel');
+  if (label) label.textContent = '☀️ 라이트';
+}
 
 // ── 업로드 ────────────────────────────────────
 document.getElementById('fi').onchange = e => handleFiles(e.target.files);
