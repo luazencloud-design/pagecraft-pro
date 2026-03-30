@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PageCraft Pro v2.0 — 상품 상세페이지 · 상품명 · 태그 생성기</title>
+<title>PageCraft Pro — 상품 상세페이지 생성기</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Noto+Sans+KR:wght@300;400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -365,36 +365,6 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--f
 }
 .err-box.show{display:block}
 
-/* Tool Panels */
-.tool-section-header{margin-bottom:14px}
-.tool-section-title{font-size:13px;font-weight:600;color:var(--text);margin-bottom:6px}
-.tool-section-desc{font-size:11px;color:var(--text2);line-height:1.6}
-.tool-run-btn{
-  width:100%;padding:10px;border-radius:8px;
-  background:var(--accent);border:none;color:#0c0c10;
-  font-size:12.5px;font-weight:700;font-family:var(--font);cursor:pointer;
-  display:flex;align-items:center;justify-content:center;gap:8px;
-  transition:all 0.2s;
-}
-.tool-run-btn:hover:not(:disabled){background:var(--accent2);transform:translateY(-1px)}
-.tool-run-btn:disabled{background:var(--surface3);color:var(--text3);cursor:not-allowed;transform:none}
-.tool-spinner{width:13px;height:13px;border:2px solid rgba(12,12,16,0.3);border-top-color:#0c0c10;border-radius:50%;animation:spin 0.7s linear infinite;display:none}
-.tool-run-btn.loading .tool-spinner{display:block}
-.tool-run-btn.loading .tool-btn-txt{display:none}
-.title-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:11px 13px;margin-bottom:7px;position:relative}
-.title-rank{font-size:10px;font-weight:700;color:var(--accent);letter-spacing:1px;margin-bottom:5px}
-.title-text{font-size:12.5px;color:var(--text);line-height:1.5;padding-right:52px}
-.title-copy{position:absolute;top:11px;right:11px;padding:3px 9px;background:var(--surface3);border:1px solid var(--border);border-radius:5px;font-size:10px;color:var(--text2);cursor:pointer;font-family:var(--font);transition:all 0.15s}
-.title-copy:hover{border-color:var(--border2);color:var(--text)}
-.title-copy.ok{color:var(--green);border-color:var(--green)}
-.tag-cloud{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px}
-.tag-item{padding:4px 10px;border-radius:20px;font-size:11px;background:var(--surface2);border:1px solid var(--border);color:var(--text2);cursor:pointer;transition:all 0.15s;font-family:var(--font)}
-.tag-item:hover{border-color:var(--accent);color:var(--accent)}
-.tag-copy-all{width:100%;padding:9px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;font-size:12px;color:var(--text2);cursor:pointer;font-family:var(--font);transition:all 0.15s}
-.tag-copy-all:hover{border-color:var(--border2);color:var(--text)}
-.tag-copy-all.ok{color:var(--green);border-color:var(--green)}
-.tool-empty{text-align:center;padding:30px 16px;color:var(--text3);font-size:12px;line-height:1.7}
-
 /* Scrollbar global */
 ::-webkit-scrollbar{width:4px;height:4px}
 ::-webkit-scrollbar-thumb{background:var(--surface3);border-radius:2px}
@@ -404,7 +374,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--f
 
 <!-- TITLEBAR -->
 <div class="titlebar">
-  <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIEAAAAgCAYAAAA14BsbAAABCGlDQ1BJQ0MgUHJvZmlsZQAAeJxjYGA8wQAELAYMDLl5JUVB7k4KEZFRCuwPGBiBEAwSk4sLGHADoKpv1yBqL+viUYcLcKakFicD6Q9ArFIEtBxopAiQLZIOYWuA2EkQtg2IXV5SUAJkB4DYRSFBzkB2CpCtkY7ETkJiJxcUgdT3ANk2uTmlyQh3M/Ck5oUGA2kOIJZhKGYIYnBncAL5H6IkfxEDg8VXBgbmCQixpJkMDNtbGRgkbiHEVBYwMPC3MDBsO48QQ4RJQWJRIliIBYiZ0tIYGD4tZ2DgjWRgEL7AwMAVDQsIHG5TALvNnSEfCNMZchhSgSKeDHkMyQx6QJYRgwGDIYMZAKbWPz9HbOBQAAARXElEQVR4nO2beZBdxXWHv+573z5vNo2kGY00QpJZBWhnEQYRtsILFsZ2sIljp8o2VSZUbIcEGxJcpuyKU5VK8L7jJTGODcZgtgSEwYsQm2XJkrVrpBGSZqTRzLx13nt36T754743mtECYrNSJZ2qW/Oqb/c53ef8+izddxQgnKQTmvTxnsBJOv70ZwGB1qDUn0PSSXotpDgZDk54elM9gdYRyq68LMP07hhw0iP8f6Q3FQQxFwTFJz7ucuESF8cB130zJZ6k10JvCAgcrdD68C3u+QAxLrzQY8F8hTGaIHgjJJ6kN5rk9TyOVmO/lWr8VZJMxuSTf9ska59Piy27Uj4Qk/t/1iRLL0iJUojWh/PSypnwHF2umtBPoV/XGl7+UaKUHnteMx/t1B8tKB39bbSh3oB5vvbnNTtnpRRagzHCX151DgcKAU8/vxmtFSKCiEUpcGKCIIDGeQVpVsyhUjhy3iqvou/rJUHkdfBVGsSCPWS+h7Js9DsO9Jo11xh44ztP49v/fi35UoKF13yNnQM5tFLYMcXFGd7j8O3vwe2f84AIHAf1GnFKuZOYO+m6CDzi4ts860fuQyYoJuqbjnVwVtt1WDFoFSfv7WB74Yl6nzcKCFF4c5w0c3puor11Hjv3/pT9g49wzGqrG1YBmVMvIT33CtzOOahYHJRghvcwuv5JRtc/HoH6OAHhVXsCpRRKgXYz3HXTQm6+8Tz8mkNr5UUuO382dz+4GqUBA4k4eH7As88lWbM2wHEsWjMhL1AoBCHjtvP2mbdGShMHi2bY28Xe8vMopRCxaKWxYpjfcQPv6Lmdapgj5baxdugRthceR6HrXuf1k1IaEcPM7o9y+pxbsFIi27KYlYXNVL3tROnUyxisbtDU1LOY+qGvkDhjKRKLgaMRV0cBwBqyV9+M1/t7Bn/4d9T6fn9cgPCqQaC1whjLXR8/l5tvuQT/QAV6n+Ij3x3kR0/tRqsoRAAEYVQSfunrwuYtIdYqrBWy2SxBEFKrVcf4GjGU/BxgsdaQcttZ0HE9e8vPEe08hRWLqzOc2XY1OW8fvqlgxOKZ8hgfhYoUeQjJEcKHOqSfiK2PV2Mg8MM8QeiBOJRH+zC2wkFPcDgPIAKiWJKTTqX75sfQ06YTeoUI3Pm9mPIIOjsJt20qRnzib1lC9+0rGPi3d1HZ9rto/kodlCN2XBuRG7WWid5IgdaocTW4iK33e3l6VSBQSmOMxc2cxqqBOXxwxzAtQ2u5/sv7uX9l32F7w1rQjubJp0cnvPF9H61dot0kDeYYaYSJGJWwzLSmJbQkZlPwdqCVi5WQ2S2X0RqfSTUsAIpQwDJu4QgcZvCxFdAwXhTrD+8XjW+ARrGn/0dURneQSHQxNLKCIMwRGT/yTkfiEYHIZcq7voJunkaYz6GsZeTn/0xpzb2Y0n6cpimkT19G+/VfwDaDSmWY/KGvsufzF2OC8uHGO+Ka6utpxFdrDveDx+BZjhkE0c6wpNvOZe6S93Dvs/1U975A9+SQ+1f2EXMUgZk4BQVYY8aNFxxH8D2PO++Is2ZtigcerjTCL75YjIT4oUdMJ0m4Lcyd9H5W9f8LgkWrOGe2v4+KqWJxsRKgxRDUxQqWpngPM1ouIROfHIHWWnLVnfTlH0PEp+HGlYrR0/5OmlOzUQpGvSFeGv4lmeQMsunTCEyF/bknScSn4rhJ/GA/ydRMglKhrnNLPNlNW+eVJLLd4LpY8RjNbSH/0sNkepaRmrWMoDCCSiQZ/MEHKW1+ZEw3Nv8Shef/C79/A12fWYHxQuI982g673qKK+8mc/4NqHgKKQ3ibfkd2WUfJjE1kuP191J48vuYoDpmZK1jtF78XhKzz0YnXOzoKKXVT1LeuOoVbXtMIGgAoGnyYuYufDd79u0lUVvHQ89sAGpRiJBDXBMgxFi0+Gp6t28in9829i4ed7ni0sgLPPCwA4SICJ4N0MTZMHIvPS1/QbOK0Z29mKQ7hVp4gM6mRbSlzqAUVjlQ3UB7cjaO00RYlz2nfTkXTb+DVKwDqxyUCAEVBOgZuYyVu27D2iqp+AwumPlFOlrOBe3ikAHizJi0HLRDa/Zsan6eFblf05Q5m8Vn/wDRwu59j7Jh08cQgY7O9zDrzNuJZ6egEhmsG0diGk9qrLv3LJLTFiJGo1WayvqnIgBoN9qVUt+92qG6+w+Un/slmUs+jPENqTOWUXzmP2n/q7uIz5hCsHsvkt9FaulSlAHrQTYOyXOuYOA/PoDYgHj7dKbf9mOSi5ahk0AcCKC9cDv5X3yT/u/8w1iIeg0gOOj2Onou5y1zr6B3Vy+5gXWY/Gq0MtF7BGs1SkXllOu6hGHANctv5KEHv8qKp/7IO65+GzE3oOaN4PkBH7s5ZPBAABjqHpiaDUnoDIPVTdQkYN7kj+A67fQ0X8XWkR8zu/U6AlGUgxHWDd3D0u7bqdiQsL64sj/IaFBh28g95Gq70Eoxve0yMsluulouZWrTBfQXf8X86f9ER3Y+NT9PORhkz/AKAGZMXk48OZmyN4AxIQBWfGr+CCiLNVEO09p2CafN/VdE+RhvlJGBpymNrMFNtxNrOxvr53ASXVALwAF/z7p6PB9nCBEQDUpT7f0D6Qs/DMZDt89BJbLYwgFMJo1KteA0LyJ/7/fR2TZS869AJCBz0bWkHlxAdeuzdH3ieyTPW0Y4Uqb06EN4u9aRXXwVqbPPp+X9n6Syawu5//0WaOfwUvXlQaDG3N6UWW9j1ukXs7V3G8XBtdjC2ugsoJHbi+J912a578EyYDE2Sv/PW7SUdS/k8ApZbrrhF+zaOsyjL34Aa0ts2FSFgxwQBN+GiApRymVH7mHmtF2PRtPZdBFD1Q20pc+lJobthcfJ1bYQ4FK1Ab6NDHZgdDUPbb2GwBTGVrFvdDVLZ90F4tGcOJ18fCsd6QWU/SGMDXlx52co1bYC0F98kiVv+QaO24xISCMhxQqi7Fi52jntgygbrX9g90/YteULNHIe7TZjxUeJg/IClKsw1cLBVGQCRUmQ+DWkGgIWkRgKDaFGAge0w8j3biK/8m4U0HXrI6QWXoUSwcm2kuw5h+SCywjLAaUV/83A128EoHj/l5j53fXEps+i6aJ3RyB4dZ6gkTgpuk+7lq6eBWzcsgEvvwVbWFs/A5A6SDTnL07yxS8alE5x3wOjnNJ5FYtmfwqV6+Su23ZgxdLZ3URLuoVJ2XPYl1uFo6NsHzmomQAhtCGaFJVgD7uLv6a7+XKSsRnM67wVg2LUz9GbfxCUwheDwhLUF2fFpyV+BtNb3042NZOU24kVjRdWUfEUSjtkYrMxgCVGbnQ1pdpWtIrUUK5tI1/ZyOSWS7A2qjhEBFN34cYEKOWSTM7AGJ8gHKG/9xs0cgywiClFuvOK4AkSWtym2RwZBZGeY9lOMBoRBynsR8IqggviIMUio+ufAO0gYqj2bia18B31qOLgnnIu4sawxTJO16l03fJjdCKB9X2INyG4uF2z0G4CG3oHk8iXB0Ejg3bpOes62qacysZtmwiLmwlyaycWJXV+8891mdbtsWRhmp8/KCiVoqP5TPo2HcBNOJhQ0deXI7AxOlouYF9uFbZeCTTUIiL41qBViKABxY78A0xuuhgDOE4LQoL+8gpqQT/p2AwC66PHZcTTW5Yzv/szKBWj4g+Tr6xB6RjZ1JkEYrAiWAJCEayECIm6bDtmIBFNaA3WhlGLWKy1KCxCCMpFoyA0hF4Fa6so5TBW/agYiE/twEYIBOsVyMy4nHx6OkFlTz0vqOcENkSjSZ32NuxoCZ1sxu9bi4RlCBXiW0y1Vu9bd+M6hniCRSFolFEYXzBBgNMxB2fSLJTrIGLxh0cIc0Xs4M6Xvb49BAQNACSZPe+9JLNT2dK7BVvaSpBfhxxyUmYtKGX59vdLnNLTxh1fKGIt7Bv+PX1DG9HKQSuF1jGM0bjaYVLzArROYK03QbIAgYQoQgxRDVyobmCgvIopmYsJbYlQyuzI/RRQCJZQDEoMoQSAZmbbewgkJFdez5o9nyawORynlYvm/ARjLFYcSt5WAlPCSEgmdQaTs5dzoPQrANoy55NNnkEQliOQNiova7BYEI3YGpXKPlynnbjTRkvb5YwMPzRuIVFpObp7Bf7QdlTLVFQ8S8elX2boN58iGH1pbMFaJ2lddidu+1xMtYKt+ZT/cA/oOFILEF+wfoiYcXHcgoSNxNIlGHwJWwPlZin/9ocM/eTvD7OorkO4jvKXA0FkYOVkOHXBB8BN09u3A1XeSpDfcBgAxtYs4Gjhc/9SGqutq94go94BWjOn4/kFakE/pUov+dJ6hotr6/H2cApMgNb+2L2AENKX+xmZ2Bk4Os7+0acoe9vrcg2hDUB8jES7NlSKmq1hiE42HZ3klLYbUDiEtoJSLn44xN7cCqa3L8e3BU7vuoXO1isRsbRlLwClsDbAWlu/XrEY42MxGBPt9uGhx2huXoQ1I8yccwvJpjmUCy8A0NTxVkxYYn/fNzjw/GfpvPxuwlqVROciOt/1ANWXfkVY3InKTCXVsxR32jxspYSTmUxhxafxhzah461Yr4Z4YXQVOy6WS2gQz8MaF2Jp/N5VBH2bcaafSuqSv6ZtdITRVfdgy8M4k3pIn3U5tb41VLf+9qhnBu54AMQSk5g97314Bvp370KVt+AVNh8VAA0yFowf1DkpRAL2DP4Pw/EX2T/yDMVqL0FYPOr4aJzGcbJoncHRiXqbQ7G2kRf33ohWMUJT4OBxraBVEkdlcXQzgiVf+RPdiTlkErNYPPNuwOA6WYwNicU7iLmtAPQOfQtXZ+lovgilHSZnL0WRYKDwMG6siebUQoytIiJoFcNRGZQKcXQSgKGhB4gnu5nadT2OG2daz0cQ+zegFTrTxci+R9nPNykPPMHgyk8y6fw70U4rOtNFfN5HsYooUycCm7JC4fFbKa7+at31W3Qsi45nkXhlgitXsTQqmQINOpbF2pDh736MKZ+6F7dtGi3v/zwty/8R8Yro9CRinSly93ztWEAgKO2S6norw8UapXIeVd6IV9gGrwCAscnVXWfj7H7nwE8PM3Kjk4w7PWz0D2yZ/uJjIHHKfl/9bWTs0OQmcAIIbYV9pSfQqolK8BKg6R36JqEdpTlxJo5O4oVD9OV+SFt6MenYKYz6vSilCU2RDQN30FZcQlt6ERCjWP0jQ+WVzJ/1dURZjK2BsnhBP/2D9wGWqrcTUIiE7N19F8XCStonX0M82Y1206AM3vBvyO1/MNKZcij23U91/3O0nHYDic4lqHQzJNJgQoyXw9u/hvKWn+Hnt41TYkDtj/fh75yCrRUhPBg6w53PUH46jSCYgU0AVLc/w/47l9F05SeIzZyHm21BOQp//x5GX9hNdfUv65vzyCepYxZWSpNoPQfVNAubX49X6j1mAByZGufqjavY13OxM5Y+vkIfGfutlHOUsBPNKxWbTsXfNeFNZ8ty5nTdBDgMFZ9lS/9njyCzIWfiIblSLkc8ij5k92kdR7kpxPrYsHrUfsdKShEl0vWxClBuMppLGEzYcEflwSGrdJwUxlSP9OpNp4a3iLL1Y/A+6IN3LEQZvqonjY0eqgGgSFsIhpiTZdGs7xDaMsXqnwhNjXR8Jtn0PLR2EIENu2+jUFmDwhnDYATmcUptXB6NN17j4ufQK/AxI8vh7Uc6zVPOQROMB9aEiyR7MNFrtB96GKT1WG5zNDqsRDxeAIC6IV+F2MP7Nz5ggbGzjrGsuNEGSjlU/QFaM+fQnD4LrMJKSGjLVPzd9A39gEJlDVEVYo4+pyN868ARvd74Sy11lPZDhxxFrhxFRxPax8k4hlvEE/aTc6Uc0vEe4rF24m4Txnj4YZFRb0eUD5xAqjlxVvoqKPo45fh86nU86IQGwVhO0aCx6ubEUskJDYKTFNHJf0g9SSdBcJLg/wCzkkUvhdWZtQAAAABJRU5ErkJggg==" alt="MagicOne" style="height:32px;object-fit:contain;flex-shrink:0;">
+  <img src="data:image/png;base64,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" alt="MagicOne" style="height:32px;object-fit:contain;flex-shrink:0;">
   <div class="tb-logo">✦ PageCraft Pro</div>
   <div style="display:flex;align-items:center;gap:8px">
     <span class="theme-label" id="themeLabel">🌙 다크</span>
@@ -537,40 +507,14 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--f
 <!-- ── RIGHT PANEL ── -->
 <aside class="right-panel">
   <div class="panel-tabs">
-    <button class="ptab active" data-tab="copy">📄 텍스트</button>
-    <button class="ptab" data-tab="title">✨ 상품명</button>
-    <button class="ptab" data-tab="tags">🏷 태그</button>
-    <button class="ptab" data-tab="export">⬇ 내보내기</button>
+    <button class="ptab active" data-tab="copy">복사용 텍스트</button>
+    <button class="ptab" data-tab="export">내보내기</button>
   </div>
 
   <div class="panel-body" id="panelCopy">
     <div style="text-align:center;padding:60px 16px;color:var(--text3);font-size:13px;line-height:1.8">
       생성 후 각 항목을<br>바로 복사할 수 있습니다
     </div>
-  </div>
-
-  <div class="panel-body" id="panelTitle" style="display:none">
-    <div class="tool-section-header">
-      <div class="tool-section-title">✨ 상품명 최적화</div>
-      <div class="tool-section-desc">SEO에 최적화된 상품명 5가지를 생성합니다.<br>검색 노출과 클릭률을 높이는 버전을 선택하세요.</div>
-    </div>
-    <button class="tool-run-btn" id="titleBtn" onclick="runTitleGen()">
-      <span class="tool-btn-txt">✨ 최적화 상품명 5개 생성</span>
-      <div class="tool-spinner"></div>
-    </button>
-    <div id="titleResult" style="margin-top:12px"></div>
-  </div>
-
-  <div class="panel-body" id="panelTags" style="display:none">
-    <div class="tool-section-header">
-      <div class="tool-section-title">🏷 쿠팡 태그 20개</div>
-      <div class="tool-section-desc">검색량과 연관성 기반의 쿠팡 최적화 태그를 생성합니다.</div>
-    </div>
-    <button class="tool-run-btn" id="tagsBtn" onclick="runTagGen()">
-      <span class="tool-btn-txt">🏷 태그 20개 생성</span>
-      <div class="tool-spinner"></div>
-    </button>
-    <div id="tagsResult" style="margin-top:12px"></div>
   </div>
 
   <div class="panel-body" id="panelExport" style="display:none">
@@ -591,7 +535,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--f
   <div style="display:flex;align-items:center;gap:5px"><div class="status-dot"></div><span>Ready</span></div>
   <span id="statusImgs">사진 0장</span>
   <span id="statusPf">플랫폼: 쿠팡</span>
-  <span class="status-right">PageCraft Pro v2.0</span>
+  <span class="status-right">PageCraft Pro v1.0</span>
 </div>
 </div>
 
@@ -664,22 +608,12 @@ document.getElementById('pf').onchange = function() {
 };
 
 // ── 탭 ───────────────────────────────────────
-const panelMap = {
-  copy:   'panelCopy',
-  title:  'panelTitle',
-  tags:   'panelTags',
-  export: 'panelExport',
-};
 document.querySelectorAll('.ptab').forEach(t => {
   t.onclick = () => {
     document.querySelectorAll('.ptab').forEach(x => x.classList.remove('active'));
     t.classList.add('active');
-    Object.values(panelMap).forEach(id => {
-      const el = document.getElementById(id);
-      if(el) el.style.display = 'none';
-    });
-    const target = panelMap[t.dataset.tab];
-    if(target) document.getElementById(target).style.display = 'block';
+    document.getElementById('panelCopy').style.display = t.dataset.tab==='copy' ? 'block' : 'none';
+    document.getElementById('panelExport').style.display = t.dataset.tab==='export' ? 'block' : 'none';
   };
 });
 
@@ -693,6 +627,7 @@ const loadSteps = [
 ];
 
 // ── 생성 ─────────────────────────────────────
+// ── 생성 (Gemini API 버전으로 수정) ─────────────────────────────────────
 document.getElementById('genBtn').onclick = async function() {
   const brand = document.getElementById('brand').value.trim();
   const pname = document.getElementById('pname').value.trim();
@@ -718,61 +653,75 @@ document.getElementById('genBtn').onclick = async function() {
     document.getElementById('loadSub').textContent = s[1];
   }, 1600);
 
-  const imgBlocks = imgs.slice(0,3).map(im => ({
-    type:'image',
-    source:{type:'base64', media_type:im.data.split(';')[0].split(':')[1], data:im.data.split(',')[1]}
+  // Gemini용 이미지 데이터 구성 (inline_data)
+  const imageParts = imgs.slice(0, 3).map(im => ({
+    inline_data: {
+      mime_type: im.data.split(';')[0].split(':')[1],
+      data: im.data.split(',')[1]
+    }
   }));
 
-  const sys = `당신은 한국 쇼핑몰 상품 상세페이지 전문 카피라이터입니다. 반드시 순수 JSON만 출력하세요. 코드블록, 마크다운, 설명 없이 JSON 객체만 반환하세요.`;
-  const usr = `상품 이미지를 분석하여 JSON 생성:
+  const systemInstruction = "당신은 한국 쇼핑몰 상품 상세페이지 전문 카피라이터입니다. 반드시 순수 JSON만 출력하세요. 마크다운 코드블록(```json) 없이 {로 시작해서 }로 끝나는 JSON 객체만 반환하세요.";
+  
+  const userPrompt = `상품 이미지를 분석하여 JSON 생성:
 브랜드:${brand||'이미지에서판단'}, 상품명:${pname||'이미지에서판단'}, 가격:${price||'미입력'}, 카테고리:${cat}, 특징:${feats}, 플랫폼:${pf}, 메모:${memo||'없음'}
 
+응답 양식:
 {"product_name":"상품명(40자이내)","subtitle":"서브타이틀(20자이내)","main_copy":"메인카피1~2줄","selling_points":["포인트1","포인트2","포인트3"],"description":"상세설명3문단(\\n구분)","specs":[{"key":"브랜드","value":"..."},{"key":"소재","value":"..."},{"key":"사이즈","value":"..."},{"key":"색상","value":"..."},{"key":"원산지","value":"..."},{"key":"세탁방법","value":"..."},{"key":"추천계절","value":"..."}],"keywords":["키워드1","키워드2","키워드3","키워드4","키워드5"],"caution":"주의사항2~3가지"}`;
 
+  export default async function handler(req, res) {
+  if (req.method !== 'POST') return res.status(405).send('Method Not Allowed');
+
+  // Vercel 환경변수에서 키를 가져옵니다 (브라우저에 노출 안 됨)
+  const API_KEY = process.env.GEMINI_API_KEY; 
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
+
   try {
-    const resp = await fetch('/api/generate', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({
-        model:'claude-sonnet-4-20250514', max_tokens:1500,
-        system: sys,
-        messages:[{role:'user', content:[...imgBlocks,{type:'text',text:usr}]}]
-      })
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(req.body) // 클라이언트에서 보낸 본문을 그대로 전달
     });
+
+    const data = await response.json();
+    res.status(response.status).json(data);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+}
 
     clearInterval(timer);
 
     if (!resp.ok) {
-      let errMsg = `서버 오류 (${resp.status})`;
-      try {
-        const e = await resp.json();
-        if (typeof e.error === 'string') errMsg = e.error;
-        else if (typeof e.error === 'object' && e.error?.message) errMsg = e.error.message;
-        else if (typeof e.message === 'string') errMsg = e.message;
-        else errMsg = `HTTP ${resp.status}: ${JSON.stringify(e).slice(0,120)}`;
-      } catch(_) { errMsg = `서버 응답 오류 (${resp.status}) — API 키를 확인해주세요`; }
-      throw new Error(errMsg);
+      const e = await resp.json().catch(() => ({}));
+      throw new Error(e.error?.message || `서버 오류 (${resp.status})`);
     }
 
     const data = await resp.json();
-    const raw = (data.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('');
-    const clean = raw.replace(/```json\s*/gi,'').replace(/```\s*/g,'').trim();
+    
+    // Gemini 응답 추출 (가장 중요한 부분)
+    const raw = data.candidates[0].content.parts[0].text;
+    
     let parsed;
-    try { parsed = JSON.parse(clean); }
-    catch { const m = clean.match(/\{[\s\S]*\}/); if(m) parsed=JSON.parse(m[0]); else throw new Error('파싱실패'); }
+    try {
+      parsed = JSON.parse(raw.trim());
+    } catch (err) {
+      // 마크다운 태그가 포함되어 올 경우를 대비한 정규식 추출
+      const match = raw.match(/\{[\s\S]*\}/);
+      if (match) parsed = JSON.parse(match[0]);
+      else throw new Error('JSON 파싱에 실패했습니다.');
+    }
 
     resultData = parsed;
 
-    // 이미지 렌더링 요청
+    // 이미지 렌더링 (이 부분은 사용하시는 백엔드 /api/render가 있다면 유지)
     document.getElementById('loadMsg').textContent = '이미지 렌더링 중...';
     document.getElementById('loadSub').textContent = '상세페이지를 이미지로 변환 중';
 
+    // ... (이후 렌더링 로직은 기존과 동일)
     const renderResp = await fetch('/api/render', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({
-        data: parsed,
-        price: price,
-        images: imgs.slice(0,3).map(im=>im.data)
-      })
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ data: parsed, price: price, images: imgs.slice(0, 3).map(im => im.data) })
     });
 
     document.getElementById('loadingState').classList.remove('show');
@@ -783,7 +732,6 @@ document.getElementById('genBtn').onclick = async function() {
       document.getElementById('previewImg').src = generatedImgDataUrl;
       document.getElementById('resultPreview').classList.add('show');
     } else {
-      // 렌더 실패시 텍스트만 표시
       showTextResult(parsed, price);
     }
 
@@ -792,26 +740,14 @@ document.getElementById('genBtn').onclick = async function() {
     document.getElementById('dlBtn').style.display = 'flex';
     toast('✅ 상세페이지 생성 완료!');
 
-  } catch(e) {
+  } catch (e) {
     clearInterval(timer);
     document.getElementById('loadingState').classList.remove('show');
     document.getElementById('emptyState').style.display = 'flex';
     const eb = document.getElementById('errBox');
-    let errText = '알 수 없는 오류가 발생했습니다';
-    if (e instanceof Error) errText = e.message;
-    else if (typeof e === 'string') errText = e;
-    else if (e && typeof e === 'object') {
-      errText = e.message || e.error?.message || e.error || JSON.stringify(e).slice(0,150);
-    }
-    const tips = errText.includes('401') || errText.includes('API 키')
-      ? '<br><span style="font-size:11px;opacity:0.7">→ Vercel 환경변수 ANTHROPIC_API_KEY를 확인해주세요</span>'
-      : errText.includes('fetch') || errText.includes('network') || errText.includes('Failed')
-      ? '<br><span style="font-size:11px;opacity:0.7">→ 네트워크 연결을 확인해주세요</span>'
-      : errText.includes('파싱') || errText.includes('JSON')
-      ? '<br><span style="font-size:11px;opacity:0.7">→ AI 응답 형식 오류입니다. 다시 시도해주세요</span>'
-      : '';
-    eb.innerHTML = `❌ <strong>오류 발생</strong><br><span style="font-size:11px;opacity:0.8">${errText}</span>${tips}`;
+    eb.textContent = '❌ ' + e.message;
     eb.classList.add('show');
+    console.error(e);
   }
 
   btn.disabled = false;
@@ -891,180 +827,6 @@ function downloadImg() {
     toast('⚠ 먼저 상세페이지를 생성해주세요');
   }
 }
-// ── 상품명 최적화 생성 ───────────────────────
-async function runTitleGen() {
-  const brand = document.getElementById('brand').value.trim();
-  const pname = document.getElementById('pname').value.trim();
-  const cat   = document.getElementById('cat').value;
-  const pf    = document.getElementById('pf').value;
-  const feats = selF.length ? selF.join(', ') : '';
-  const memo  = document.getElementById('memo').value.trim();
-
-  if (!resultData && !brand && !pname) {
-    document.getElementById('titleResult').innerHTML =
-      '<div class="tool-empty">먼저 상세페이지를 생성하거나<br>브랜드명/상품명을 입력해주세요.</div>';
-    return;
-  }
-
-  const btn = document.getElementById('titleBtn');
-  btn.disabled = true; btn.classList.add('loading');
-  document.getElementById('titleResult').innerHTML =
-    '<div class="tool-empty">AI가 최적화 상품명을 생성 중입니다...</div>';
-
-  const productInfo = resultData
-    ? `상품명: ${resultData.product_name}, 카테고리: ${cat}, 특징: ${(resultData.selling_points||[]).join(', ')}`
-    : `브랜드: ${brand}, 상품명: ${pname}, 카테고리: ${cat}, 특징: ${feats}, 메모: ${memo}`;
-
-  const sys = `당신은 쿠팡/스마트스토어 상품명 최적화 전문가입니다. 반드시 순수 JSON만 출력하세요.`;
-  const usr = `아래 상품 정보를 바탕으로 SEO 최적화된 상품명 5가지를 생성해주세요.
-
-상품 정보: ${productInfo}
-플랫폼: ${pf}
-
-규칙:
-- 각 상품명은 40자 이내
-- 검색량이 많은 키워드를 앞에 배치
-- 브랜드명, 소재, 특징, 사이즈/색상 정보 포함
-- 각각 다른 전략으로 작성 (키워드 중심, 특징 중심, 타깃 중심 등)
-
-{"titles": [
-  {"rank": 1, "strategy": "키워드 중심", "title": "..."},
-  {"rank": 2, "strategy": "특징 강조", "title": "..."},
-  {"rank": 3, "strategy": "타깃 명확화", "title": "..."},
-  {"rank": 4, "strategy": "브랜드 강조", "title": "..."},
-  {"rank": 5, "strategy": "혜택 중심", "title": "..."}
-]}`;
-
-  try {
-    const resp = await fetch('/api/generate', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({
-        model:'claude-sonnet-4-20250514', max_tokens:800,
-        system: sys,
-        messages:[{role:'user', content:[{type:'text',text:usr}]}]
-      })
-    });
-    if (!resp.ok) throw new Error(`서버 오류 (${resp.status})`);
-    const data = await resp.json();
-    const raw = (data.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('');
-    const clean = raw.replace(/```json\s*/gi,'').replace(/```\s*/g,'').trim();
-    const parsed = JSON.parse(clean);
-    const titles = parsed.titles || [];
-
-    document.getElementById('titleResult').innerHTML = titles.map(t => `
-      <div class="title-card">
-        <div class="title-rank">${t.rank}. ${t.strategy}</div>
-        <div class="title-text">${t.title}</div>
-        <button class="title-copy" onclick="cp(this,'${t.title.replace(/'/g,"\'")}')">복사</button>
-      </div>`).join('');
-
-    toast('✨ 최적화 상품명 5개 생성 완료!');
-  } catch(e) {
-    document.getElementById('titleResult').innerHTML =
-      `<div class="tool-empty" style="color:var(--red)">오류: ${e.message}</div>`;
-  }
-  btn.disabled = false; btn.classList.remove('loading');
-}
-
-// ── 쿠팡 태그 20개 생성 ──────────────────────
-async function runTagGen() {
-  const brand = document.getElementById('brand').value.trim();
-  const cat   = document.getElementById('cat').value;
-  const feats = selF.length ? selF.join(', ') : '';
-  const memo  = document.getElementById('memo').value.trim();
-
-  if (!resultData && !brand) {
-    document.getElementById('tagsResult').innerHTML =
-      '<div class="tool-empty">먼저 상세페이지를 생성하거나<br>브랜드명을 입력해주세요.</div>';
-    return;
-  }
-
-  const btn = document.getElementById('tagsBtn');
-  btn.disabled = true; btn.classList.add('loading');
-  document.getElementById('tagsResult').innerHTML =
-    '<div class="tool-empty">AI가 태그를 생성 중입니다...</div>';
-
-  const productInfo = resultData
-    ? `상품명: ${resultData.product_name}, 카테고리: ${cat}, 키워드: ${(resultData.keywords||[]).join(', ')}, 특징: ${(resultData.selling_points||[]).join(', ')}`
-    : `브랜드: ${brand}, 카테고리: ${cat}, 특징: ${feats}, 메모: ${memo}`;
-
-  const sys = `당신은 쿠팡 검색 최적화 전문가입니다. 반드시 순수 JSON만 출력하세요.`;
-  const usr = `아래 상품에 맞는 쿠팡 검색 태그 20개를 생성해주세요.
-
-상품 정보: ${productInfo}
-
-규칙:
-- 실제 쿠팡 검색량이 높은 키워드 중심
-- 브랜드명, 카테고리, 소재, 특징, 용도, 색상, 타깃 고객 등 다양하게
-- 각 태그는 2~10자 이내
-- 중복 없이 20개
-
-{"tags": ["태그1","태그2","태그3","태그4","태그5","태그6","태그7","태그8","태그9","태그10","태그11","태그12","태그13","태그14","태그15","태그16","태그17","태그18","태그19","태그20"]}`;
-
-  try {
-    const resp = await fetch('/api/generate', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({
-        model:'claude-sonnet-4-20250514', max_tokens:500,
-        system: sys,
-        messages:[{role:'user', content:[{type:'text',text:usr}]}]
-      })
-    });
-    if (!resp.ok) throw new Error(`서버 오류 (${resp.status})`);
-    const data = await resp.json();
-    const raw = (data.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('');
-    const clean = raw.replace(/```json\s*/gi,'').replace(/```\s*/g,'').trim();
-    const parsed = JSON.parse(clean);
-    const tags = parsed.tags || [];
-
-    const tagCloud = tags.map(tag =>
-      `<button class="tag-item" onclick="cpTag(this,'${tag.replace(/'/g,"\'")}')">
-        ${tag}
-      </button>`
-    ).join('');
-
-    document.getElementById('tagsResult').innerHTML = `
-      <div style="font-size:10px;color:var(--text3);margin-bottom:8px;letter-spacing:1px">
-        태그 클릭 시 개별 복사 · 아래 버튼으로 전체 복사
-      </div>
-      <div class="tag-cloud">${tagCloud}</div>
-      <button class="tag-copy-all" id="tagCopyAllBtn" onclick="cpAllTags(${JSON.stringify(tags).replace(/"/g,'&quot;')})">
-        📋 태그 20개 전체 복사
-      </button>`;
-
-    toast('🏷 태그 20개 생성 완료!');
-  } catch(e) {
-    document.getElementById('tagsResult').innerHTML =
-      `<div class="tool-empty" style="color:var(--red)">오류: ${e.message}</div>`;
-  }
-  btn.disabled = false; btn.classList.remove('loading');
-}
-
-function cpTag(btn, tag) {
-  navigator.clipboard.writeText(tag);
-  const orig = btn.textContent.trim();
-  btn.textContent = '✓';
-  btn.style.borderColor = 'var(--green)';
-  btn.style.color = 'var(--green)';
-  setTimeout(() => {
-    btn.textContent = orig;
-    btn.style.borderColor = '';
-    btn.style.color = '';
-  }, 1200);
-}
-
-function cpAllTags(tags) {
-  navigator.clipboard.writeText(tags.join(', '));
-  const btn = document.getElementById('tagCopyAllBtn');
-  btn.textContent = '✓ 복사됨!';
-  btn.classList.add('ok');
-  setTimeout(() => {
-    btn.textContent = '📋 태그 20개 전체 복사';
-    btn.classList.remove('ok');
-  }, 1500);
-  toast('🏷 태그 20개가 복사되었습니다!');
-}
-
 function toast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg; t.classList.add('show');
