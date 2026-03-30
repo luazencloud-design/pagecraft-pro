@@ -4,8 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>PageCraft Pro v2.0 — 상품 상세페이지 · 상품명 · 태그 생성기</title>
-<script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@imgly/background-removal/dist/index.umd.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Noto+Sans+KR:wght@300;400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -147,8 +145,6 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--f
   display:flex;align-items:center;justify-content:center;
 }
 .thumb:hover .thumb-del{opacity:1}
-
-  
 
 /* Fields */
 .divider{height:1px;background:var(--border);margin:8px 0}
@@ -402,16 +398,6 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--f
 /* Scrollbar global */
 ::-webkit-scrollbar{width:4px;height:4px}
 ::-webkit-scrollbar-thumb{background:var(--surface3);border-radius:2px}
-
-/* style 태그 안 맨 아래에 추가 */
-.thumb.processing::after {
-  content: '⏳ 누끼 따는 중...';
-  position: absolute; inset: 0;
-  background: rgba(0,0,0,0.7); color: #fff;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 10px; font-family: var(--font);
-}
-  
 </style>
 </head>
 <body>
@@ -611,7 +597,6 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--f
 
 <div class="toast" id="toast"></div>
 
-
 <script>
 const imgs = [];
 let selF = [];
@@ -640,7 +625,7 @@ function applyLight() {
   if (label) label.textContent = '☀️ 라이트';
 }
 
-// ── 업로드 및 자동 누끼 따기 ─────────────────────
+// ── 업로드 ────────────────────────────────────
 document.getElementById('fi').onchange = e => handleFiles(e.target.files);
 const dz = document.getElementById('dz');
 dz.onclick = () => document.getElementById('fi').click();
@@ -648,87 +633,20 @@ dz.ondragover = e => { e.preventDefault(); dz.classList.add('drag'); };
 dz.ondragleave = () => dz.classList.remove('drag');
 dz.ondrop = e => { e.preventDefault(); dz.classList.remove('drag'); handleFiles(e.dataTransfer.files); };
 
-// 핵심 변경 함수: 업로드 즉시 누끼 따기 실행
-async function handleFiles(files) {
-  // 1. 라이브러리가 로드되었는지 엄격하게 체크
-  if (typeof imglyRemoveBackground === 'undefined') {
-    console.error("라이브러리 로드 실패");
-    toast('⚠ 라이브러리를 불러오는 중입니다. 3초 후 다시 시도해주세요.');
-    return;
-  }
-
-  const filesToProcess = [...files].slice(0, 5 - imgs.length);
-  const startIndex = imgs.length;
-  
-  filesToProcess.forEach(f => {
+function handleFiles(files) {
+  [...files].slice(0, 5 - imgs.length).forEach(f => {
     if (!f.type.startsWith('image/')) return;
-    imgs.push({ name: f.name, data: null, processing: true });
+    const r = new FileReader();
+    r.onload = e => { imgs.push({ name: f.name, data: e.target.result }); renderThumbs(); };
+    r.readAsDataURL(f);
   });
-  renderThumbs();
-
-  // 누끼 따기 설정 옵션
-const config = {
-    publicPath: "https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.4.5/dist/", 
-    fetchArgs: {
-      mode: 'cors'
-    },
-    progress: (item, loaded, total) => {
-      // 로딩 퍼센트를 콘솔에 찍어 실제 다운로드 중인지 확인
-      console.log(`나우 로딩: ${item} (${(loaded/total*100).toFixed(0)}%)`);
-    }
-  };
-
-  for (let i = 0; i < filesToProcess.length; i++) {
-    const file = filesToProcess[i];
-    if (!file.type.startsWith('image/')) continue;
-    
-    const currentIndex = startIndex + i;
-
-    try {
-      // 배경 제거 실행 (설정값 포함)
-      const nukkiBlob = await imglyRemoveBackground(file, config);
-      
-      const reader = new FileReader();
-      reader.readAsDataURL(nukkiBlob);
-      await new Promise((resolve, reject) => {
-        reader.onloadend = () => {
-          imgs[currentIndex].data = reader.result;
-          imgs[currentIndex].processing = false;
-          resolve();
-        };
-        reader.onerror = reject;
-      });
-    } catch (error) {
-      console.error("누끼 에러 상세:", error); // F12 콘솔에서 구체적 원인 확인 가능
-      imgs[currentIndex].processing = false;
-      imgs[currentIndex].data = "error";
-      toast(`❌ '${file.name}' 배경 제거 실패`);
-    }
-    renderThumbs();
-  }
 }
-
-// 썸네일 렌더링 (투명 배경용 패턴 적용)
 function renderThumbs() {
-  // 투명 배경일 때 잘 보이도록 바둑판 패턴 CSS
-  const checkerboardBg = "url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAMUExURbOzs8nJydXV1f///yH8I2AAAABQSURBVAjXY2CEAgYhBgbWYGZgEGEA0szMYGFWZGBgUGEQYGZgYGZgZmBgZgYzQ4GFoYGFwZGBgYGBkYGRAWwAwgB0AcyBUIQZGEG2QpEwAwMAP6YJkLw89V0AAAAASUVORK5CYII=') repeat";
-
-  document.getElementById('thumbGrid').innerHTML = imgs.map((im,i) => {
-    if (im.processing) {
-      return `<div class="thumb processing"></div>`; // 로딩 중 스타일
-    }
-    if (im.data === "error") {
-      return `<div class="thumb" style="background:var(--surface3); display:flex; align-items:center; justify-content:center; color:var(--red); font-size:10px;">❌ 실패</div>`;
-    }
-    // 배경 패턴 적용된 이미지 렌더링
-    return `<div class="thumb">
-      <img src="${im.data}" style="background: ${checkerboardBg}; object-fit: contain;">
-      <button class="thumb-del" onclick="rmImg(${i})">✕</button>
-    </div>`;
-  }).join('');
+  document.getElementById('thumbGrid').innerHTML = imgs.map((im,i) =>
+    `<div class="thumb"><img src="${im.data}"><button class="thumb-del" onclick="rmImg(${i})">✕</button></div>`
+  ).join('');
   document.getElementById('statusImgs').textContent = `사진 ${imgs.length}장`;
 }
-
 function rmImg(i) { imgs.splice(i,1); renderThumbs(); }
 
 // ── 칩 ───────────────────────────────────────
@@ -774,14 +692,8 @@ const loadSteps = [
   ['마무리 중...','거의 다 됐어요!'],
 ];
 
-// ── 생성 (Gemini API 규격 유지) ────────────────
+// ── 생성 ─────────────────────────────────────
 document.getElementById('genBtn').onclick = async function() {
-  // 아직 누끼 작업 중인 사진이 있다면 막음
-  if (imgs.some(im => im.processing)) {
-    toast('⚠ 아직 상품 사진 누끼 작업이 진행 중입니다. 잠시만 기다려주세요.');
-    return;
-  }
-
   const brand = document.getElementById('brand').value.trim();
   const pname = document.getElementById('pname').value.trim();
   const price = document.getElementById('price').value.trim();
@@ -806,8 +718,8 @@ document.getElementById('genBtn').onclick = async function() {
     document.getElementById('loadSub').textContent = s[1];
   }, 1600);
 
-  // Gemini API 이미지 규격 (여기에 담긴 이미지는 이미 누끼가 따진 상태)
-  const imgParts = imgs.filter(im => im.data && im.data !== "error").slice(0,3).map(im => ({
+  // Gemini API 규격에 맞춘 이미지 블록 형식
+  const imgBlocks = imgs.slice(0,3).map(im => ({
     inlineData: {
       mimeType: im.data.split(';')[0].split(':')[1],
       data: im.data.split(',')[1]
@@ -821,13 +733,19 @@ document.getElementById('genBtn').onclick = async function() {
 {"product_name":"상품명(40자이내)","subtitle":"서브타이틀(20자이내)","main_copy":"메인카피1~2줄","selling_points":["포인트1","포인트2","포인트3"],"description":"상세설명3문단(\\n구분)","specs":[{"key":"브랜드","value":"..."},{"key":"소재","value":"..."},{"key":"사이즈","value":"..."},{"key":"색상","value":"..."},{"key":"원산지","value":"..."},{"key":"세탁방법","value":"..."},{"key":"추천계절","value":"..."}],"keywords":["키워드1","키워드2","키워드3","키워드4","키워드5"],"caution":"주의사항2~3가지"}`;
 
   try {
+    // Gemini API 양식으로 전송
     const resp = await fetch('/api/generate', {
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({
         model: 'gemini-2.5-flash',
+        generationConfig: {
+          maxOutputTokens: 1500,
+          responseMimeType: "application/json"
+        },
         systemInstruction: { parts: [{ text: sys }] },
-        contents: [{ role: 'user', parts: [...imgParts, { text: usr }] }],
-        generationConfig: { responseMimeType: "application/json", maxOutputTokens: 1500 }
+        contents: [
+          { role: 'user', parts: [...imgBlocks, { text: usr }] }
+        ]
       })
     });
 
@@ -846,7 +764,8 @@ document.getElementById('genBtn').onclick = async function() {
     }
 
     const data = await resp.json();
-    // Gemini API 응답 파싱
+    
+    // Gemini 응답 구조에서 텍스트 추출
     const raw = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
     const clean = raw.replace(/```json\s*/gi,'').replace(/```\s*/g,'').trim();
     let parsed;
@@ -864,8 +783,7 @@ document.getElementById('genBtn').onclick = async function() {
       body: JSON.stringify({
         data: parsed,
         price: price,
-        // 상세페이지 렌더링 서버에도 누끼 따진 이미지를 보냄
-        images: imgs.filter(im => im.data && im.data !== "error").slice(0,3).map(im=>im.data)
+        images: imgs.slice(0,3).map(im=>im.data)
       })
     });
 
@@ -877,6 +795,7 @@ document.getElementById('genBtn').onclick = async function() {
       document.getElementById('previewImg').src = generatedImgDataUrl;
       document.getElementById('resultPreview').classList.add('show');
     } else {
+      // 렌더 실패시 텍스트만 표시
       showTextResult(parsed, price);
     }
 
@@ -983,7 +902,8 @@ function downloadImg() {
     toast('⚠ 먼저 상세페이지를 생성해주세요');
   }
 }
-// ── 상품명 최적화 생성 (Gemini API 규격 유지) ──
+
+// ── 상품명 최적화 생성 (Gemini 적용) ───────────
 async function runTitleGen() {
   const brand = document.getElementById('brand').value.trim();
   const pname = document.getElementById('pname').value.trim();
@@ -1032,15 +952,18 @@ async function runTitleGen() {
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({
         model: 'gemini-2.5-flash',
+        generationConfig: {
+          maxOutputTokens: 800,
+          responseMimeType: "application/json"
+        },
         systemInstruction: { parts: [{ text: sys }] },
-        contents: [{ role: 'user', parts: [{ text: usr }] }],
-        generationConfig: { responseMimeType: "application/json", maxOutputTokens: 800 }
+        contents: [
+          { role: 'user', parts: [{ text: usr }] }
+        ]
       })
     });
     if (!resp.ok) throw new Error(`서버 오류 (${resp.status})`);
-    
     const data = await resp.json();
-    // Gemini API 응답 파싱
     const raw = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
     const clean = raw.replace(/```json\s*/gi,'').replace(/```\s*/g,'').trim();
     const parsed = JSON.parse(clean);
@@ -1061,7 +984,7 @@ async function runTitleGen() {
   btn.disabled = false; btn.classList.remove('loading');
 }
 
-// ── 쿠팡 태그 20개 생성 (Gemini API 규격 유지) ──
+// ── 쿠팡 태그 20개 생성 (Gemini 적용) ──────────
 async function runTagGen() {
   const brand = document.getElementById('brand').value.trim();
   const cat   = document.getElementById('cat').value;
@@ -1101,15 +1024,18 @@ async function runTagGen() {
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({
         model: 'gemini-2.5-flash',
+        generationConfig: {
+          maxOutputTokens: 500,
+          responseMimeType: "application/json"
+        },
         systemInstruction: { parts: [{ text: sys }] },
-        contents: [{ role: 'user', parts: [{ text: usr }] }],
-        generationConfig: { responseMimeType: "application/json", maxOutputTokens: 500 }
+        contents: [
+          { role: 'user', parts: [{ text: usr }] }
+        ]
       })
     });
     if (!resp.ok) throw new Error(`서버 오류 (${resp.status})`);
-    
     const data = await resp.json();
-    // Gemini API 응답 파싱
     const raw = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
     const clean = raw.replace(/```json\s*/gi,'').replace(/```\s*/g,'').trim();
     const parsed = JSON.parse(clean);
@@ -1168,18 +1094,6 @@ function toast(msg) {
   t.textContent = msg; t.classList.add('show');
   setTimeout(()=>t.classList.remove('show'), 2500);
 }
-
-  // 스크립트 맨 아래에 추가
-window.onload = async () => {
-  if (typeof imglyRemoveBackground !== 'undefined') {
-    console.log("AI 모델 예열 시작...");
-    // 빈 설정으로 미리 엔진을 깨워둡니다.
-    try {
-      // 실제 실행은 하지 않고 라이브러리 객체만 확인
-    } catch(e) {}
-  }
-};
-  
 </script>
 </body>
 </html>
