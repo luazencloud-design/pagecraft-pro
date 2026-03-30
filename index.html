@@ -687,7 +687,7 @@ const loadSteps = [
   ['마무리 중...','거의 다 됐어요!'],
 ];
 
-// ── 생성 ─────────────────────────────────────
+// ── 1. 상세페이지 생성 ─────────────────────────────────────
 document.getElementById('genBtn').onclick = async function() {
   const brand = document.getElementById('brand').value.trim();
   const pname = document.getElementById('pname').value.trim();
@@ -713,7 +713,6 @@ document.getElementById('genBtn').onclick = async function() {
     document.getElementById('loadSub').textContent = s[1];
   }, 1600);
 
-  // Gemini API 이미지 규격으로 변경
   const imgParts = imgs.slice(0,3).map(im => ({
     inlineData: {
       mimeType: im.data.split(';')[0].split(':')[1],
@@ -725,8 +724,9 @@ document.getElementById('genBtn').onclick = async function() {
 [절대 규칙]
 1. 반드시 순수한 JSON 객체 하나만 출력하세요.
 2. \`\`\`json 이나 \`\`\` 같은 마크다운 기호를 절대 사용하지 마세요.
-3. 인사말, 설명, 요약 등 JSON 외의 텍스트는 단 한 글자도 출력하지 마세요.
-4. JSON 안의 모든 키와 값은 반드시 큰따옴표(")로 묶어야 하며, 값 안에 큰따옴표가 들어갈 경우 역슬래시(\\")로 이스케이프 처리하세요.`;
+3. 인사말, 설명 등 JSON 외의 텍스트는 출력하지 마세요.
+4. 모든 키와 값은 큰따옴표(")로 묶고, 값 안의 줄바꿈은 '\\n'으로 처리하세요.`;
+
   const usr = `상품 이미지를 분석하여 JSON 생성:
 브랜드:${brand||'이미지에서판단'}, 상품명:${pname||'이미지에서판단'}, 가격:${price||'미입력'}, 카테고리:${cat}, 특징:${feats}, 플랫폼:${pf}, 메모:${memo||'없음'}
 
@@ -735,40 +735,40 @@ document.getElementById('genBtn').onclick = async function() {
   try {
     const resp = await fetch('/api/generate', {
       method:'POST', headers:{'Content-Type':'application/json'},
-      // Gemini API 페이로드 규격 적용
       body: JSON.stringify({
         model: 'gemini-2.5-flash',
         systemInstruction: { parts: [{ text: sys }] },
         contents: [{ role: 'user', parts: [...imgParts, { text: usr }] }],
-        generationConfig: { responseMimeType: "application/json", maxOutputTokens: 4000 }
+        generationConfig: { responseMimeType: "application/json", maxOutputTokens: 2500 }
       })
     });
 
     clearInterval(timer);
 
     if (!resp.ok) {
-      let errMsg = `서버 오류 (${resp.status})`;
-      try {
-        const e = await resp.json();
-        if (typeof e.error === 'string') errMsg = e.error;
-        else if (typeof e.error === 'object' && e.error?.message) errMsg = e.error.message;
-        else if (typeof e.message === 'string') errMsg = e.message;
-        else errMsg = `HTTP ${resp.status}: ${JSON.stringify(e).slice(0,120)}`;
-      } catch(_) { errMsg = `서버 응답 오류 (${resp.status}) — API 키를 확인해주세요`; }
-      throw new Error(errMsg);
+      const e = await resp.json();
+      throw new Error(e.error?.message || e.message || `서버 에러 (${resp.status})`);
     }
 
     const data = await resp.json();
-    // Gemini API 응답 파싱
     const raw = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-    const clean = raw.replace(/```json\s*/gi,'').replace(/```\s*/g,'').trim();
+    
+    // 강력한 파싱 로직
     let parsed;
-    try { parsed = JSON.parse(clean); }
-    catch { const m = clean.match(/\{[\s\S]*\}/); if(m) parsed=JSON.parse(m[0]); else throw new Error('파싱실패'); }
+    try {
+      let clean = raw.replace(/```json/gi, '').replace(/```/g, '').trim();
+      parsed = JSON.parse(clean);
+    } catch (e) {
+      const match = raw.match(/\{[\s\S]*\}/);
+      if (match) {
+        parsed = JSON.parse(match[0].replace(/[\u0000-\u001F\u007F-\u009F]/g, ""));
+      } else {
+        throw new Error('JSON 구조를 찾을 수 없습니다.');
+      }
+    }
 
     resultData = parsed;
 
-    // 이미지 렌더링 요청
     document.getElementById('loadMsg').textContent = '이미지 렌더링 중...';
     document.getElementById('loadSub').textContent = '상세페이지를 이미지로 변환 중';
 
@@ -789,7 +789,6 @@ document.getElementById('genBtn').onclick = async function() {
       document.getElementById('previewImg').src = generatedImgDataUrl;
       document.getElementById('resultPreview').classList.add('show');
     } else {
-      // 렌더 실패시 텍스트만 표시
       showTextResult(parsed, price);
     }
 
@@ -803,20 +802,7 @@ document.getElementById('genBtn').onclick = async function() {
     document.getElementById('loadingState').classList.remove('show');
     document.getElementById('emptyState').style.display = 'flex';
     const eb = document.getElementById('errBox');
-    let errText = '알 수 없는 오류가 발생했습니다';
-    if (e instanceof Error) errText = e.message;
-    else if (typeof e === 'string') errText = e;
-    else if (e && typeof e === 'object') {
-      errText = e.message || e.error?.message || e.error || JSON.stringify(e).slice(0,150);
-    }
-    const tips = errText.includes('401') || errText.includes('API 키')
-      ? '<br><span style="font-size:11px;opacity:0.7">→ Vercel 환경변수 GEMINI_API_KEY를 확인해주세요</span>'
-      : errText.includes('fetch') || errText.includes('network') || errText.includes('Failed')
-      ? '<br><span style="font-size:11px;opacity:0.7">→ 네트워크 연결을 확인해주세요</span>'
-      : errText.includes('파싱') || errText.includes('JSON')
-      ? '<br><span style="font-size:11px;opacity:0.7">→ AI 응답 형식 오류입니다. 다시 시도해주세요</span>'
-      : '';
-    eb.innerHTML = `❌ <strong>오류 발생</strong><br><span style="font-size:11px;opacity:0.8">${errText}</span>${tips}`;
+    eb.innerHTML = `❌ <strong>오류 발생</strong><br><span style="font-size:11px;opacity:0.8">${e.message}</span>`;
     eb.classList.add('show');
   }
 
@@ -825,7 +811,6 @@ document.getElementById('genBtn').onclick = async function() {
 };
 
 function showTextResult(d, priceInput) {
-  // API 렌더링 실패시 HTML 미리보기 표시
   const priceNum = priceInput ? parseInt(priceInput.replace(/[^0-9]/g,''),10) : null;
   const priceHtml = priceNum ? `<div style="font-size:20px;font-weight:700;color:#e8c97a;margin-top:8px">${priceNum.toLocaleString()}원</div>` : '';
   const specs = (d.specs||[]).map(s=>`<tr><td style="padding:8px;color:#888;font-size:12px;font-weight:600;border-bottom:1px solid #222">${s.key}</td><td style="padding:8px;color:#ccc;font-size:12px;border-bottom:1px solid #222">${s.value}</td></tr>`).join('');
@@ -897,7 +882,8 @@ function downloadImg() {
     toast('⚠ 먼저 상세페이지를 생성해주세요');
   }
 }
-// ── 상품명 최적화 생성 ───────────────────────
+
+// ── 2. 상품명 최적화 생성 ───────────────────────
 async function runTitleGen() {
   const brand = document.getElementById('brand').value.trim();
   const pname = document.getElementById('pname').value.trim();
@@ -944,27 +930,33 @@ async function runTitleGen() {
   try {
     const resp = await fetch('/api/generate', {
       method:'POST', headers:{'Content-Type':'application/json'},
-      // Gemini API 페이로드 규격 적용
       body: JSON.stringify({
         model: 'gemini-2.5-flash',
         systemInstruction: { parts: [{ text: sys }] },
         contents: [{ role: 'user', parts: [{ text: usr }] }],
-        generationConfig: { responseMimeType: "application/json", maxOutputTokens: 2000 }
+        generationConfig: { responseMimeType: "application/json", maxOutputTokens: 1000 }
       })
     });
+    
     if (!resp.ok) throw new Error(`서버 오류 (${resp.status})`);
     
     const data = await resp.json();
-    // Gemini API 응답 파싱
     const raw = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-     console.log("💡 AI 원본 응답 내용:", raw);
-
-    const clean = raw.replace(/```json\s*/gi,'').replace(/```\s*/g,'').trim();
+    
+    // 파싱 강화 로직
     let parsed;
-    try { parsed = JSON.parse(clean); }
-    catch { const m = clean.match(/\{[\s\S]*\}/); if(m) parsed=JSON.parse(m[0]); else throw new Error('파싱실패'); }
-    const clean = raw.replace(/```json\s*/gi,'').replace(/```\s*/g,'').trim();
-    const parsed = JSON.parse(clean);
+    try {
+      let clean = raw.replace(/```json/gi, '').replace(/```/g, '').trim();
+      parsed = JSON.parse(clean);
+    } catch (e) {
+      const match = raw.match(/\{[\s\S]*\}/);
+      if(match) {
+        parsed = JSON.parse(match[0].replace(/[\u0000-\u001F\u007F-\u009F]/g, ""));
+      } else {
+        throw new Error("상품명 파싱 실패");
+      }
+    }
+    
     const titles = parsed.titles || [];
 
     document.getElementById('titleResult').innerHTML = titles.map(t => `
@@ -982,7 +974,7 @@ async function runTitleGen() {
   btn.disabled = false; btn.classList.remove('loading');
 }
 
-// ── 쿠팡 태그 20개 생성 ──────────────────────
+// ── 3. 쿠팡 태그 20개 생성 ──────────────────────
 async function runTagGen() {
   const brand = document.getElementById('brand').value.trim();
   const cat   = document.getElementById('cat').value;
@@ -1020,7 +1012,6 @@ async function runTagGen() {
   try {
     const resp = await fetch('/api/generate', {
       method:'POST', headers:{'Content-Type':'application/json'},
-      // Gemini API 페이로드 규격 적용
       body: JSON.stringify({
         model: 'gemini-2.5-flash',
         systemInstruction: { parts: [{ text: sys }] },
@@ -1028,19 +1019,26 @@ async function runTagGen() {
         generationConfig: { responseMimeType: "application/json", maxOutputTokens: 1000 }
       })
     });
+    
     if (!resp.ok) throw new Error(`서버 오류 (${resp.status})`);
     
     const data = await resp.json();
-    // Gemini API 응답 파싱
     const raw = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-     console.log("💡 AI 원본 응답 내용:", raw);
-
-    const clean = raw.replace(/```json\s*/gi,'').replace(/```\s*/g,'').trim();
+    
+    // 파싱 강화 로직
     let parsed;
-    try { parsed = JSON.parse(clean); }
-    catch { const m = clean.match(/\{[\s\S]*\}/); if(m) parsed=JSON.parse(m[0]); else throw new Error('파싱실패'); }
-    const clean = raw.replace(/```json\s*/gi,'').replace(/```\s*/g,'').trim();
-    const parsed = JSON.parse(clean);
+    try {
+      let clean = raw.replace(/```json/gi, '').replace(/```/g, '').trim();
+      parsed = JSON.parse(clean);
+    } catch (e) {
+      const match = raw.match(/\{[\s\S]*\}/);
+      if(match) {
+        parsed = JSON.parse(match[0].replace(/[\u0000-\u001F\u007F-\u009F]/g, ""));
+      } else {
+        throw new Error("태그 파싱 실패");
+      }
+    }
+    
     const tags = parsed.tags || [];
 
     const tagCloud = tags.map(tag =>
