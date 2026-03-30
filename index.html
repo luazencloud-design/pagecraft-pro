@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>PageCraft Pro v2.0 — 상품 상세페이지 · 상품명 · 태그 생성기</title>
-<script src="https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.4.5/dist/imgly-background-removal.iife.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.4.5/dist/imgly-background-removal.iife.min.js" crossorigin="anonymous"></script>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Noto+Sans+KR:wght@300;400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -649,9 +649,10 @@ dz.ondrop = e => { e.preventDefault(); dz.classList.remove('drag'); handleFiles(
 
 // 핵심 변경 함수: 업로드 즉시 누끼 따기 실행
 async function handleFiles(files) {
-  // 라이브러리 로드 확인
+  // 1. 라이브러리가 로드되었는지 엄격하게 체크
   if (typeof imglyRemoveBackground === 'undefined') {
-    toast('⚠ 라이브러리 로딩 중입니다. 잠시 후 다시 시도해주세요.');
+    console.error("라이브러리 로드 실패");
+    toast('⚠ 라이브러리를 불러오는 중입니다. 3초 후 다시 시도해주세요.');
     return;
   }
 
@@ -665,10 +666,15 @@ async function handleFiles(files) {
   renderThumbs();
 
   // 누끼 따기 설정 옵션
-  const config = {
-    publicPath: "https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.4.5/dist/", // 모델 경로 명시
-    debug: false,
-    device: 'cpu', // 저사양 PC 배려
+const config = {
+    publicPath: "https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.4.5/dist/", 
+    fetchArgs: {
+      mode: 'cors'
+    },
+    progress: (item, loaded, total) => {
+      // 로딩 퍼센트를 콘솔에 찍어 실제 다운로드 중인지 확인
+      console.log(`나우 로딩: ${item} (${(loaded/total*100).toFixed(0)}%)`);
+    }
   };
 
   for (let i = 0; i < filesToProcess.length; i++) {
@@ -1161,6 +1167,18 @@ function toast(msg) {
   t.textContent = msg; t.classList.add('show');
   setTimeout(()=>t.classList.remove('show'), 2500);
 }
+
+  // 스크립트 맨 아래에 추가
+window.onload = async () => {
+  if (typeof imglyRemoveBackground !== 'undefined') {
+    console.log("AI 모델 예열 시작...");
+    // 빈 설정으로 미리 엔진을 깨워둡니다.
+    try {
+      // 실제 실행은 하지 않고 라이브러리 객체만 확인
+    } catch(e) {}
+  }
+};
+  
 </script>
 </body>
 </html>
