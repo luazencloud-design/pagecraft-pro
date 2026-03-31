@@ -395,6 +395,61 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--f
 .tag-copy-all.ok{color:var(--green);border-color:var(--green)}
 .tool-empty{text-align:center;padding:30px 16px;color:var(--text3);font-size:12px;line-height:1.7}
 
+/* 배경 제거 토글 */
+.bgremove-row{
+  display:flex;align-items:center;gap:8px;padding:8px 18px 4px;
+}
+.bgremove-toggle{
+  width:34px;height:18px;border-radius:9px;
+  background:var(--surface3);border:1px solid var(--border2);
+  cursor:pointer;position:relative;transition:all 0.2s;flex-shrink:0;
+}
+.bgremove-toggle.on{background:var(--accent);border-color:var(--accent)}
+.bgremove-toggle-knob{
+  position:absolute;top:2px;left:2px;width:12px;height:12px;
+  border-radius:50%;background:var(--text2);transition:all 0.2s;
+}
+.bgremove-toggle.on .bgremove-toggle-knob{
+  transform:translateX(16px);background:#0c0c10;
+}
+.bgremove-label{font-size:11px;color:var(--text2);flex:1}
+.bgremove-badge{
+  font-size:9px;padding:2px 6px;border-radius:4px;
+  background:var(--accent-dim);color:var(--accent);font-weight:600;
+}
+.bgremove-status{
+  font-size:10px;color:var(--text3);font-family:var(--mono);
+  padding:0 18px 6px;display:none;
+}
+.bgremove-status.show{display:block}
+.bgremove-progress{
+  height:3px;background:var(--surface3);border-radius:2px;
+  margin-top:4px;overflow:hidden;
+}
+.bgremove-progress-bar{
+  height:100%;background:var(--accent);border-radius:2px;
+  width:0%;transition:width 0.3s;
+}
+
+/* 배경 제거 처리 중 오버레이 */
+.thumb-processing{
+  position:absolute;inset:0;background:rgba(12,12,16,0.8);
+  display:flex;align-items:center;justify-content:center;
+  z-index:2;
+}
+.thumb-processing .mini-spinner{
+  width:16px;height:16px;border:2px solid rgba(232,201,122,0.3);
+  border-top-color:var(--accent);border-radius:50%;
+  animation:spin 0.7s linear infinite;
+}
+.thumb-done{
+  position:absolute;top:3px;left:3px;
+  width:16px;height:16px;border-radius:50%;
+  background:var(--green);color:#fff;font-size:9px;
+  display:flex;align-items:center;justify-content:center;
+  z-index:2;
+}
+
 /* Scrollbar global */
 ::-webkit-scrollbar{width:4px;height:4px}
 ::-webkit-scrollbar-thumb{background:var(--surface3);border-radius:2px}
@@ -426,6 +481,17 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--f
       <p>클릭하거나 드래그<br>JPG · PNG · 최대 5장</p>
       <input type="file" id="fi" accept="image/*" multiple style="display:none">
     </div>
+  </div>
+  <div class="bgremove-row">
+    <div class="bgremove-toggle" id="bgToggle" onclick="toggleBgRemove()">
+      <div class="bgremove-toggle-knob"></div>
+    </div>
+    <span class="bgremove-label">배경 자동 제거</span>
+    <span class="bgremove-badge">AI</span>
+  </div>
+  <div class="bgremove-status" id="bgStatus">
+    <span id="bgStatusText">배경 제거 준비 중...</span>
+    <div class="bgremove-progress"><div class="bgremove-progress-bar" id="bgProgressBar"></div></div>
   </div>
   <div id="thumbGrid" class="thumb-grid"></div>
 
@@ -597,6 +663,9 @@ const imgs = [];
 let selF = [];
 let resultData = null;
 let generatedImgDataUrl = null;
+let bgRemoveEnabled = false;
+let bgRemoveModel = null;
+let bgRemoveModelLoading = false;
 
 // ── 테마 전환 ─────────────────────────────────
 const root = document.documentElement;
@@ -620,6 +689,119 @@ function applyLight() {
   if (label) label.textContent = '☀️ 라이트';
 }
 
+// ── 배경 제거 (브라우저 내 ONNX) ────────────────
+function toggleBgRemove() {
+  const toggle = document.getElementById('bgToggle');
+  bgRemoveEnabled = !bgRemoveEnabled;
+  toggle.classList.toggle('on', bgRemoveEnabled);
+
+  if (bgRemoveEnabled && !bgRemoveModel && !bgRemoveModelLoading) {
+    loadBgRemoveModel();
+  }
+
+  // 이미 업로드된 이미지가 있으면 배경 제거 다시 처리
+  if (bgRemoveEnabled && imgs.length > 0) {
+    processAllBgRemoval();
+  } else if (!bgRemoveEnabled && imgs.length > 0) {
+    // 토글 해제 시 원본으로 복원
+    imgs.forEach(im => { if (im.original) im.data = im.original; });
+    renderThumbs();
+  }
+}
+
+async function loadBgRemoveModel() {
+  bgRemoveModelLoading = true;
+  const statusEl = document.getElementById('bgStatus');
+  const statusText = document.getElementById('bgStatusText');
+  const progressBar = document.getElementById('bgProgressBar');
+
+  statusEl.classList.add('show');
+  statusText.textContent = 'AI 배경 제거 모델 로딩 중...';
+  progressBar.style.width = '10%';
+
+  try {
+    // @imgly/background-removal (브라우저 전용, ONNX 기반)
+    // CDN에서 ESM 로드
+    progressBar.style.width = '30%';
+    statusText.textContent = '모델 다운로드 중 (최초 1회)...';
+
+    const module = await import('https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.5.5/+esm');
+    bgRemoveModel = module;
+
+    progressBar.style.width = '100%';
+    statusText.textContent = '✅ 배경 제거 준비 완료';
+    setTimeout(() => statusEl.classList.remove('show'), 2000);
+  } catch (e) {
+    console.error('배경 제거 모델 로드 실패:', e);
+    statusText.textContent = '⚠️ 모델 로드 실패 - 원본 이미지 사용';
+    progressBar.style.width = '0%';
+    setTimeout(() => statusEl.classList.remove('show'), 3000);
+    bgRemoveEnabled = false;
+    document.getElementById('bgToggle').classList.remove('on');
+  }
+  bgRemoveModelLoading = false;
+}
+
+async function removeBgFromDataUrl(dataUrl) {
+  if (!bgRemoveModel) return dataUrl;
+  try {
+    // dataUrl → Blob → 배경 제거 → dataUrl
+    const resp = await fetch(dataUrl);
+    const blob = await resp.blob();
+    const resultBlob = await bgRemoveModel.removeBackground(blob, {
+      output: { format: 'image/png', quality: 0.9 }
+    });
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.readAsDataURL(resultBlob);
+    });
+  } catch (e) {
+    console.error('배경 제거 실패:', e);
+    return dataUrl; // 실패 시 원본 반환
+  }
+}
+
+async function processAllBgRemoval() {
+  if (!bgRemoveEnabled) return;
+
+  // 모델이 아직 로딩 중이면 기다림
+  if (bgRemoveModelLoading) {
+    const waitForModel = () => new Promise(resolve => {
+      const check = setInterval(() => {
+        if (!bgRemoveModelLoading) { clearInterval(check); resolve(); }
+      }, 300);
+    });
+    await waitForModel();
+  }
+  if (!bgRemoveModel) return;
+
+  for (let i = 0; i < imgs.length; i++) {
+    const im = imgs[i];
+    if (im.bgProcessed) continue; // 이미 처리된 것 스킵
+
+    // 원본 저장
+    if (!im.original) im.original = im.data;
+
+    // 처리 중 표시
+    renderThumbs();
+    const thumbEl = document.getElementById('thumbGrid').children[i];
+    if (thumbEl) {
+      const overlay = document.createElement('div');
+      overlay.className = 'thumb-processing';
+      overlay.innerHTML = '<div class="mini-spinner"></div>';
+      thumbEl.appendChild(overlay);
+    }
+
+    // 배경 제거 실행
+    const result = await removeBgFromDataUrl(im.original);
+    im.data = result;
+    im.bgProcessed = true;
+
+    renderThumbs();
+  }
+}
+
 // ── 업로드 ────────────────────────────────────
 document.getElementById('fi').onchange = e => handleFiles(e.target.files);
 const dz = document.getElementById('dz');
@@ -632,13 +814,49 @@ function handleFiles(files) {
   [...files].slice(0, 5 - imgs.length).forEach(f => {
     if (!f.type.startsWith('image/')) return;
     const r = new FileReader();
-    r.onload = e => { imgs.push({ name: f.name, data: e.target.result }); renderThumbs(); };
+    r.onload = async (e) => {
+      const imgObj = { name: f.name, data: e.target.result, original: e.target.result, bgProcessed: false };
+      imgs.push(imgObj);
+      renderThumbs();
+
+      // 배경 제거 활성화 시 자동 처리
+      if (bgRemoveEnabled) {
+        const idx = imgs.length - 1;
+        const thumbEl = document.getElementById('thumbGrid').children[idx];
+        if (thumbEl) {
+          const overlay = document.createElement('div');
+          overlay.className = 'thumb-processing';
+          overlay.innerHTML = '<div class="mini-spinner"></div>';
+          thumbEl.appendChild(overlay);
+        }
+
+        // 모델 로딩 대기
+        if (bgRemoveModelLoading) {
+          await new Promise(resolve => {
+            const check = setInterval(() => {
+              if (!bgRemoveModelLoading) { clearInterval(check); resolve(); }
+            }, 300);
+          });
+        }
+
+        if (bgRemoveModel) {
+          const result = await removeBgFromDataUrl(imgObj.original);
+          imgObj.data = result;
+          imgObj.bgProcessed = true;
+          renderThumbs();
+        }
+      }
+    };
     r.readAsDataURL(f);
   });
 }
 function renderThumbs() {
   document.getElementById('thumbGrid').innerHTML = imgs.map((im,i) =>
-    `<div class="thumb"><img src="${im.data}"><button class="thumb-del" onclick="rmImg(${i})">✕</button></div>`
+    `<div class="thumb" style="position:relative">
+      <img src="${im.data}">
+      ${im.bgProcessed ? '<div class="thumb-done">✓</div>' : ''}
+      <button class="thumb-del" onclick="rmImg(${i})">✕</button>
+    </div>`
   ).join('');
   document.getElementById('statusImgs').textContent = `사진 ${imgs.length}장`;
 }
