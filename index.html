@@ -691,24 +691,25 @@ const loadSteps = [
 // ── 1. 상세페이지 생성 ─────────────────────────────────────
 
 // 배경 제거 및 용량 최적화 (Request Entity Too Large 에러 방지)
+// 배경 제거 및 용량 최적화 (Request Entity Too Large 에러 방지 및 투명도 유지)
 async function processImageForApi(base64Str) {
   try {
-    // 1. 모델 파일 경로 명시 (중요: 이 설정이 없으면 404 에러로 원본이 반환됨)
+    // 1. 모델 파일 경로 명시 (unpkg CDN이 CORS 제약에서 더 안정적입니다)
     const config = {
-      publicPath: "https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.4.5/dist/"
+      publicPath: "https://unpkg.com/@imgly/background-removal@1.4.5/dist/"
     };
     
-    // 2. 배경 제거
+    // 2. 배경 제거 실행 (투명 배경의 Blob 데이터 반환)
     const imageBlob = await imglyRemoveBackground(base64Str, config);
     
-    // 3. 리사이징 & 압축 (Vercel 용량 제한 초과 방지)
+    // 3. 리사이징 & PNG 변환 (Vercel 용량 제한 방지 + 투명도 완벽 유지)
     return new Promise((resolve, reject) => {
       const img = new Image();
       img.onload = () => {
         const canvas = document.createElement('canvas');
         let w = img.width;
         let h = img.height;
-        const MAX = 800; // 최대 픽셀 제한
+        const MAX = 800; // 가로/세로 최대 800px 제한
         
         // 비율 유지하며 리사이징
         if (w > MAX || h > MAX) {
@@ -719,17 +720,20 @@ async function processImageForApi(base64Str) {
         canvas.width = w;
         canvas.height = h;
         const ctx = canvas.getContext('2d');
+        
+        // 캔버스를 투명하게 초기화한 후 이미지를 그림
+        ctx.clearRect(0, 0, w, h);
         ctx.drawImage(img, 0, 0, w, h);
         
-        // 투명도를 유지하면서 압축률이 뛰어난 webp 포맷으로 변환
-        resolve(canvas.toDataURL('image/webp', 0.8));
+        // ★ 중요: 'image/png'로 추출해야 렌더링 서버와 Gemini API 모두 투명 배경을 인식합니다.
+        resolve(canvas.toDataURL('image/png'));
       };
       img.onerror = reject;
       img.src = URL.createObjectURL(imageBlob);
     });
   } catch (e) {
     console.warn("배경 제거 오류(원본 리사이징만 진행):", e);
-    // 에러 시에도 용량 폭탄 에러 방지를 위해 원본을 리사이징해서 반환
+    // 에러 발생 시 프로그램이 멈추지 않도록 원본을 리사이징하여 반환
     return new Promise((resolve) => {
       const img = new Image();
       img.onload = () => {
@@ -743,7 +747,7 @@ async function processImageForApi(base64Str) {
         canvas.width = w; canvas.height = h;
         const ctx = canvas.getContext('2d');
         ctx.drawImage(img, 0, 0, w, h);
-        resolve(canvas.toDataURL('image/jpeg', 0.8));
+        resolve(canvas.toDataURL('image/jpeg', 0.8)); // 실패 시에만 JPEG 폴백
       };
       img.src = base64Str;
     });
