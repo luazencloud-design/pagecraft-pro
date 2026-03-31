@@ -1,5 +1,77 @@
-import { createCanvas, loadImage } from '@napi-rs/canvas';
+import { createCanvas, loadImage, GlobalFonts } from '@napi-rs/canvas';
+import { existsSync, writeFileSync, mkdirSync } from 'fs';
+import { join } from 'path';
 
+// ── 한글 폰트 로딩 (Vercel 서버리스 환경 대응) ──
+let fontsLoaded = false;
+
+async function ensureFonts() {
+  if (fontsLoaded) return;
+
+  // 1순위: 프로젝트에 번들된 폰트
+  const projectDir = process.cwd();
+  const bundledPaths = [
+    join(projectDir, 'fonts', 'NotoSansKR-Regular.ttf'),
+    join(projectDir, 'fonts', 'NotoSansKR-Medium.ttf'),
+    join(projectDir, 'public', 'fonts', 'NotoSansKR-Regular.ttf'),
+  ];
+
+  for (const p of bundledPaths) {
+    if (existsSync(p)) {
+      GlobalFonts.registerFromPath(p, 'NotoSansKR');
+      fontsLoaded = true;
+      console.log('Font loaded from bundled path:', p);
+
+      // Bold 버전도 시도
+      const boldPath = p.replace('Regular', 'Bold').replace('Medium', 'Bold');
+      if (existsSync(boldPath)) {
+        GlobalFonts.registerFromPath(boldPath, 'NotoSansKRBold');
+      }
+      return;
+    }
+  }
+
+  // 2순위: /tmp에 캐시된 폰트
+  const tmpDir = '/tmp/pagecraft-fonts';
+  const cachedFont = join(tmpDir, 'NotoSansKR.otf');
+
+  if (existsSync(cachedFont)) {
+    GlobalFonts.registerFromPath(cachedFont, 'NotoSansKR');
+    fontsLoaded = true;
+    console.log('Font loaded from /tmp cache');
+    return;
+  }
+
+  // 3순위: CDN에서 다운로드 → /tmp에 캐시
+  const fontUrls = [
+    'https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/packages/pretendard/dist/public/static/Pretendard-Regular.otf',
+    'https://cdn.jsdelivr.net/gh/googlefonts/noto-cjk@main/Sans/SubsetOTF/KR/NotoSansKR-Regular.otf',
+    'https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-kr@5.0.19/files/noto-sans-kr-all-400-normal.woff',
+  ];
+
+  if (!existsSync(tmpDir)) mkdirSync(tmpDir, { recursive: true });
+
+  for (const url of fontUrls) {
+    try {
+      console.log('Downloading font from:', url);
+      const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
+      if (!res.ok) continue;
+      const buf = Buffer.from(await res.arrayBuffer());
+      if (buf.length < 10000) continue; // 너무 작으면 실패
+      writeFileSync(cachedFont, buf);
+      GlobalFonts.registerFromPath(cachedFont, 'NotoSansKR');
+      fontsLoaded = true;
+      console.log('Font downloaded and registered from:', url);
+      return;
+    } catch (e) {
+      console.warn('Font download failed for', url, e.message);
+    }
+  }
+
+  console.error('⚠️ 한글 폰트를 로드할 수 없습니다. fonts/ 디렉토리에 NotoSansKR-Regular.ttf를 넣어주세요.');
+}
+
+// ── 메인 핸들러 ──
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -8,6 +80,9 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   try {
+    // 폰트 로드 (cold start 시에만 실행)
+    await ensureFonts();
+
     const { data: d, price, images } = req.body;
     const W = 800;
 
@@ -21,6 +96,11 @@ export default async function handler(req, res) {
     const DARK   = '#161616';
     const GOLD   = '#c8a050';
     const YELLOW = '#ffc800';
+
+    // 폰트 패밀리 (등록된 폰트 사용, 없으면 fallback)
+    const fontFamily = fontsLoaded ? 'NotoSansKR' : 'sans-serif';
+    const fontR = fontFamily;
+    const fontB = fontFamily; // bold는 weight로 처리
 
     // 섹션 높이
     const heroH   = 110;
@@ -60,22 +140,18 @@ export default async function handler(req, res) {
     const canvas = createCanvas(W, total);
     const ctx = canvas.getContext('2d');
 
-    // 한국어 폰트 fallback
-    const fontR = 'sans-serif';
-    const fontB = 'bold sans-serif';
-
     function fillRect(x, y, w, h, color) {
       ctx.fillStyle = color;
       ctx.fillRect(x, y, w, h);
     }
     function text(str, x, y, color, size, bold=false) {
       ctx.fillStyle = color;
-      ctx.font = `${bold?'700 ':''} ${size}px ${bold?fontB:fontR}`;
+      ctx.font = `${bold ? '700' : '400'} ${size}px "${fontR}", sans-serif`;
       ctx.fillText(str, x, y);
     }
     function centerText(str, y, color, size, bold=false) {
       ctx.fillStyle = color;
-      ctx.font = `${bold?'700 ':''} ${size}px ${bold?fontB:fontR}`;
+      ctx.font = `${bold ? '700' : '400'} ${size}px "${fontR}", sans-serif`;
       const w2 = ctx.measureText(str).width;
       ctx.fillText(str, (W - w2) / 2, y);
     }
@@ -86,7 +162,7 @@ export default async function handler(req, res) {
     }
     function wrapText(str, x, y, maxW, size, color, lhAdd=8, bold=false) {
       ctx.fillStyle = color;
-      ctx.font = `${bold?'700 ':''} ${size}px ${bold?fontB:fontR}`;
+      ctx.font = `${bold ? '700' : '400'} ${size}px "${fontR}", sans-serif`;
       const lh = size + lhAdd;
       let cur = '';
       let cy = y;
@@ -115,6 +191,8 @@ export default async function handler(req, res) {
 
     // ── 2. 메인 사진 ──
     if (loadedImgs[0]?.img && mainH > 0) {
+      // 흰색 배경을 먼저 칠하고 이미지를 그림 (투명 배경 대응)
+      fillRect(0, y, W, mainH, BG);
       ctx.drawImage(loadedImgs[0].img, 0, y, W, mainH);
       y += mainH;
     }
@@ -139,10 +217,12 @@ export default async function handler(req, res) {
     const px = y+60;
     for (let i=0; i<3; i++) {
       const cx = 40 + i*(colW+10);
-      ctx.fillStyle = LGRAY; ctx.font = `700 28px ${fontB}`;
+      ctx.fillStyle = LGRAY;
+      ctx.font = `700 28px "${fontR}", sans-serif`;
       ctx.fillText(`0${i+1}`, cx, px+42);
       line(cx, px+48, cx+colW-10, px+48, LINE);
-      ctx.fillStyle = BLACK; ctx.font = `700 12px ${fontB}`;
+      ctx.fillStyle = BLACK;
+      ctx.font = `700 12px "${fontR}", sans-serif`;
       ctx.fillText((pts[i]||'').slice(0,10), cx, px+64);
       if (pts[i]) wrapText(pts[i], cx, px+82, colW-10, 11, GRAY, 6);
     }
@@ -166,6 +246,8 @@ export default async function handler(req, res) {
       centerText('COLOR VARIATION  ·  컬러 선택', y+24, YELLOW, 10);
       y += lbl2H;
 
+      // 흰색 배경을 먼저 칠함 (투명 PNG 대응)
+      fillRect(0, y, W, colorH, BG);
       if (loadedImgs[2]?.img) ctx.drawImage(loadedImgs[2].img, 0,      y, W/2, colorH);
       if (loadedImgs[1]?.img) ctx.drawImage(loadedImgs[1].img, W/2,    y, W/2, colorH);
       // 라벨
@@ -184,9 +266,11 @@ export default async function handler(req, res) {
     let sy = y+60;
     for (const s of specs) {
       line(60, sy+30, W-60, sy+30, LINE);
-      ctx.fillStyle = BLACK; ctx.font = `700 12px ${fontB}`;
+      ctx.fillStyle = BLACK;
+      ctx.font = `700 12px "${fontR}", sans-serif`;
       ctx.fillText(s.key, 70, sy+20);
-      ctx.fillStyle = GRAY; ctx.font = `12px ${fontR}`;
+      ctx.fillStyle = GRAY;
+      ctx.font = `400 12px "${fontR}", sans-serif`;
       ctx.fillText(s.value, 220, sy+20);
       sy += 31;
     }
@@ -199,7 +283,7 @@ export default async function handler(req, res) {
     const kws = d.keywords || [];
     let kx = 60, ky = y+50;
     for (const kw of kws) {
-      ctx.font = `11px ${fontR}`;
+      ctx.font = `400 11px "${fontR}", sans-serif`;
       const kw2 = '#'+kw;
       const kw_w = ctx.measureText(kw2).width + 18;
       if (kx + kw_w > W-60) { kx=60; ky+=32; }
