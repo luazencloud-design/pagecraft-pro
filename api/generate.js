@@ -25,7 +25,7 @@ export default async function handler(req, res) {
       });
     }
 
-    const targetModel = model || 'gemini-2.5-flash';
+    const targetModel = model || 'gemini-3.1-flash-lite';
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${targetModel}:generateContent?key=${apiKey}`;
 
     const response = await fetch(url, {
