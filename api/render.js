@@ -106,15 +106,16 @@ export default async function handler(req, res) {
     const heroH   = 110;
     const copyH   = 190;
     const ptH     = 270;
-    const descH   = 360;
+    const descH   = 260;
     const specH   = 320;
     const kwH     = 120;
     const cautH   = 200;
     const footH   = 90;
 
-    // 사진 높이 계산 (Crop 방식: 고정 높이에 맞춰 중앙 크롭)
-    const MAIN_CROP_H = 800;   // 메인 사진 고정 높이
-    const COLOR_CROP_H = 500;  // 컬러 비교 사진 고정 높이
+    // 사진 높이 계산 (crop 모드: 고정 높이 사용)
+    const MAIN_PHOTO_H = 800;   // 메인 사진 고정 높이
+    const COLOR_PHOTO_H = 500;  // 컬러 사진 고정 높이
+
     let loadedImgs = [];
     for (let i = 0; i < Math.min(images.length, 3); i++) {
       try {
@@ -125,19 +126,41 @@ export default async function handler(req, res) {
         loadedImgs.push(null);
       }
     }
- 
-    // 메인사진(첫번째 전폭) + 나머지 2장 나란히
-    const mainH   = loadedImgs[0] ? MAIN_CROP_H : 0;
-    const colorH  = loadedImgs.slice(1).some(Boolean) ? COLOR_CROP_H : 0;
-    const lbl2H   = loadedImgs.slice(1).some(Boolean) ? 40 : 0;
- 
+
+    const mainH   = loadedImgs[0] ? MAIN_PHOTO_H : 0;
+    const hasColorImgs = loadedImgs.slice(1).some(Boolean);
+    const colorH  = hasColorImgs ? COLOR_PHOTO_H : 0;
+    const lbl2H   = hasColorImgs ? 40 : 0;
+
+    // ── center-crop 그리기 (object-fit: cover 방식) ──
+    function drawImageCover(imgObj, dx, dy, dw, dh) {
+      const { img, w: sw, h: sh } = imgObj;
+      const srcRatio = sw / sh;
+      const dstRatio = dw / dh;
+      let sx, sy, sWidth, sHeight;
+      if (srcRatio > dstRatio) {
+        // 원본이 더 넓음 → 좌우를 자름
+        sHeight = sh;
+        sWidth = sh * dstRatio;
+        sx = (sw - sWidth) / 2;
+        sy = 0;
+      } else {
+        // 원본이 더 높음 → 상하를 자름
+        sWidth = sw;
+        sHeight = sw / dstRatio;
+        sx = 0;
+        sy = (sh - sHeight) / 2;
+      }
+      ctx.drawImage(img, sx, sy, sWidth, sHeight, dx, dy, dw, dh);
+    }
+
     const total = heroH + mainH + copyH + ptH + descH +
                   (lbl2H > 0 ? lbl2H + colorH : 0) +
                   specH + kwH + cautH + footH;
- 
+
     const canvas = createCanvas(W, total);
     const ctx = canvas.getContext('2d');
- 
+
     function fillRect(x, y, w, h, color) {
       ctx.fillStyle = color;
       ctx.fillRect(x, y, w, h);
@@ -174,31 +197,9 @@ export default async function handler(req, res) {
       if (cur) { ctx.fillText(cur, x, cy); cy += lh; }
       return cy;
     }
- 
-    // 중앙 크롭 방식으로 이미지 그리기 (비율 유지, 영역에 맞게 자르기)
-    function drawCropped(imgObj, dx, dy, dw, dh) {
-      const img = imgObj.img;
-      const srcRatio = img.width / img.height;
-      const dstRatio = dw / dh;
-      let sx, sy, sw, sh;
-      if (srcRatio > dstRatio) {
-        // 원본이 더 넓음 → 좌우를 자름
-        sh = img.height;
-        sw = Math.round(img.height * dstRatio);
-        sx = Math.round((img.width - sw) / 2);
-        sy = 0;
-      } else {
-        // 원본이 더 높음 → 상하를 자름
-        sw = img.width;
-        sh = Math.round(img.width / dstRatio);
-        sx = 0;
-        sy = Math.round((img.height - sh) / 2);
-      }
-      ctx.drawImage(img, sx, sy, sw, sh, dx, dy, dw, dh);
-    }
- 
+
     let y = 0;
- 
+
     // ── 1. 헤더 ──
     fillRect(0, y, W, heroH, DARK);
     const bt = 'NATIONAL GEOGRAPHIC STYLE  ·  FASHION & ACCESSORY';
@@ -209,10 +210,11 @@ export default async function handler(req, res) {
     centerText(su, y+86, LGRAY, 13);
     y += heroH;
 
-    // ── 2. 메인 사진 (중앙 크롭) ──
-    if (loadedImgs[0]?.img && mainH > 0) {
+    // ── 2. 메인 사진 ──
+    if (loadedImgs[0] && mainH > 0) {
+      // 흰색 배경을 먼저 칠하고 이미지를 그림 (투명 배경 대응)
       fillRect(0, y, W, mainH, BG);
-      drawCropped(loadedImgs[0], 0, y, W, mainH);
+      drawImageCover(loadedImgs[0], 0, y, W, mainH);
       y += mainH;
     }
 
@@ -264,11 +266,11 @@ export default async function handler(req, res) {
       fillRect(0, y, W, lbl2H, DARK);
       centerText('COLOR VARIATION  ·  컬러 선택', y+24, YELLOW, 10);
       y += lbl2H;
- 
+
       // 흰색 배경을 먼저 칠함 (투명 PNG 대응)
       fillRect(0, y, W, colorH, BG);
-      if (loadedImgs[2]?.img) drawCropped(loadedImgs[2], 0,   y, W/2, colorH);
-      if (loadedImgs[1]?.img) drawCropped(loadedImgs[1], W/2, y, W/2, colorH);
+      if (loadedImgs[2]) drawImageCover(loadedImgs[2], 0,      y, W/2, colorH);
+      if (loadedImgs[1]) drawImageCover(loadedImgs[1], W/2,    y, W/2, colorH);
       // 라벨
       fillRect(0,    y+colorH-30, W/2, 30, 'rgba(20,20,20,0.85)');
       fillRect(W/2,  y+colorH-30, W/2, 30, 'rgba(240,240,240,0.85)');
