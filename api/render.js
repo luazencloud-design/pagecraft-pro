@@ -252,28 +252,16 @@ export default async function handler(req, res) {
     line(60, y+36, 100, y+36, GOLD, 2);
     text('PRODUCT STORY', 108, y+31, GOLD, 10);
     let dy = y+60;
-
-    // 상세 설명 200~400자 트리밍
-    let rawDesc = (d.description||'').replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
-    if (rawDesc.length > 400) {
-      // 200자 이내에서 마지막 문장 부호(. 。 ! ?) 위치를 찾아 자연스럽게 자름
-      let cutIdx = 400;
-      const lastPeriod = rawDesc.substring(200, 400).search(/[.。!?]/);
-      if (lastPeriod !== -1) {
-        cutIdx = 200 + lastPeriod + 1;
-      }
-      rawDesc = rawDesc.slice(0, cutIdx).trim();
-      if (!/[.。!?]$/.test(rawDesc)) rawDesc += '...';
-    } else if (rawDesc.length < 200 && rawDesc.length > 0) {
-      // 100자 미만이면 그대로 사용 (AI가 짧게 생성한 경우)
+    const paras = (d.description||'').split('\n').filter(Boolean);
+    for (const para of paras) {
+      dy = wrapText(para, 60, dy, W-120, 13, GRAY, 6);
+      dy += 14;
     }
+    y += descH;
 
     // 줄바꿈 삽입 (약 60자마다)
-    const descChunks = [];
-    for (let ci = 0; ci < rawDesc.length; ci += 60) {
-      descChunks.push(rawDesc.slice(ci, ci + 60));
-    }
-    for (const para of descChunks) {
+    const paras = (d.description||'').split('\n').filter(Boolean);
+    for (const para of paras) {
       dy = wrapText(para, 60, dy, W-120, 13, GRAY, 6);
       dy += 14;
     }
