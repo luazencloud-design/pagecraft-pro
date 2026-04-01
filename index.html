@@ -995,7 +995,7 @@ document.getElementById('genBtn').onclick = async function() {
   const usr = `상품 이미지를 분석하여 JSON 생성:
 브랜드:${brand||'이미지에서판단'}, 상품명:${pname||'이미지에서판단'}, 가격:${price||'미입력'}, 카테고리:${cat}, 특징:${feats}, 플랫폼:${pf}, 메모:${memo||'없음'}
 
-{"product_name":"상품명(40자이내)","subtitle":"서브타이틀(20자이내)","main_copy":"메인카피1~2줄","selling_points":["포인트1","포인트2","포인트3"],"description":"상세설명3문단(\\n구분)","specs":[{"key":"브랜드","value":"..."},{"key":"소재","value":"..."},{"key":"사이즈","value":"..."},{"key":"색상","value":"..."},{"key":"원산지","value":"..."},{"key":"세탁방법","value":"..."},{"key":"추천계절","value":"..."}],"keywords":["키워드1","키워드2","키워드3","키워드4","키워드5"],"caution":"주의사항2~3가지"}`;
+{"product_name":"상품명(40자이내)","subtitle":"서브타이틀(20자이내)","main_copy":"메인카피1~2줄","selling_points":["포인트1","포인트2","포인트3"],"description":"상세설명2문단(\\n구분)","specs":[{"key":"브랜드","value":"..."},{"key":"소재","value":"..."},{"key":"사이즈","value":"..."},{"key":"색상","value":"..."},{"key":"원산지","value":"..."},{"key":"세탁방법","value":"..."},{"key":"추천계절","value":"..."}],"keywords":["키워드1","키워드2","키워드3","키워드4","키워드5"],"caution":"주의사항2~3가지"}`;
 
   try {
     const resp = await fetch('/api/generate', {
