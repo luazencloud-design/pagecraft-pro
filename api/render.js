@@ -253,18 +253,18 @@ export default async function handler(req, res) {
     text('PRODUCT STORY', 108, y+31, GOLD, 10);
     let dy = y+60;
 
-    // 상세 설명 100~200자 트리밍
+    // 상세 설명 200~400자 트리밍
     let rawDesc = (d.description||'').replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
-    if (rawDesc.length > 200) {
+    if (rawDesc.length > 400) {
       // 200자 이내에서 마지막 문장 부호(. 。 ! ?) 위치를 찾아 자연스럽게 자름
-      let cutIdx = 200;
-      const lastPeriod = rawDesc.substring(100, 200).search(/[.。!?]/);
+      let cutIdx = 400;
+      const lastPeriod = rawDesc.substring(200, 400).search(/[.。!?]/);
       if (lastPeriod !== -1) {
-        cutIdx = 100 + lastPeriod + 1;
+        cutIdx = 200 + lastPeriod + 1;
       }
       rawDesc = rawDesc.slice(0, cutIdx).trim();
       if (!/[.。!?]$/.test(rawDesc)) rawDesc += '...';
-    } else if (rawDesc.length < 100 && rawDesc.length > 0) {
+    } else if (rawDesc.length < 200 && rawDesc.length > 0) {
       // 100자 미만이면 그대로 사용 (AI가 짧게 생성한 경우)
     }
 
