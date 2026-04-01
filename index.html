@@ -278,9 +278,13 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--f
 .loading-sub{font-size:11px;color:var(--text2);font-family:var(--mono)}
 
 /* Result Preview */
-.result-preview{display:none;padding:20px}
+.result-preview{display:none;padding:20px;max-height:calc(100vh - 200px);overflow-y:auto;overflow-x:hidden}
 .result-preview.show{display:block}
-.preview-img{width:100%;border-radius:8px;display:block}
+.result-preview::-webkit-scrollbar{width:6px}
+.result-preview::-webkit-scrollbar-track{background:var(--surface2);border-radius:3px}
+.result-preview::-webkit-scrollbar-thumb{background:var(--accent);border-radius:3px;opacity:0.6}
+.result-preview::-webkit-scrollbar-thumb:hover{opacity:1}
+.preview-img{width:100%;border-radius:8px;display:block;height:auto}
 
 /* ── RIGHT PANEL ── */
 .right-panel{
