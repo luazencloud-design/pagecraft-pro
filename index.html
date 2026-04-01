@@ -1002,7 +1002,7 @@ document.getElementById('genBtn').onclick = async function() {
     const resp = await fetch('/api/generate', {
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({
-        model: 'gemini-3.1-flash-lite',
+        model: 'gemini-2.5-flash',
         systemInstruction: { parts: [{ text: sys }] },
         contents: [{ role: 'user', parts: [...imgParts, { text: usr }] }],
         generationConfig: { responseMimeType: "application/json", maxOutputTokens: 2500 }
@@ -1207,7 +1207,7 @@ async function runTitleGen() {
     const resp = await fetch('/api/generate', {
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({
-        model: 'gemini-3.1-flash-lite',
+        model: 'gemini-2.5-flash',
         systemInstruction: { parts: [{ text: sys }] },
         contents: [{ role: 'user', parts: [{ text: usr }] }],
         generationConfig: { responseMimeType: "application/json", maxOutputTokens: 1000 }
@@ -1289,7 +1289,7 @@ async function runTagGen() {
     const resp = await fetch('/api/generate', {
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({
-        model: 'gemini-3.1-flash-lite',
+        model: 'gemini-2.5-flash',
         systemInstruction: { parts: [{ text: sys }] },
         contents: [{ role: 'user', parts: [{ text: usr }] }],
         generationConfig: { responseMimeType: "application/json", maxOutputTokens: 1000 }
