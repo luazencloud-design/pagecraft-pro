@@ -112,23 +112,25 @@ export default async function handler(req, res) {
     const cautH   = 200;
     const footH   = 90;
 
-    // 사진 높이 계산 (Crop 방식: 고정 높이에 맞춰 중앙 크롭)
-    const MAIN_CROP_H = 800;   // 메인 사진 고정 높이
-    const COLOR_CROP_H = 500;  // 컬러 비교 사진 고정 높이
+    // 사진 높이 계산
+    let photoHeights = [];
     let loadedImgs = [];
     for (let i = 0; i < Math.min(images.length, 3); i++) {
       try {
         const buf = Buffer.from(images[i].split(',')[1], 'base64');
         const img = await loadImage(buf);
-        loadedImgs.push({ img, w: img.width, h: img.height });
+        const h = Math.round(img.height * (W / img.width));
+        loadedImgs.push({ img, h });
+        photoHeights.push(h);
       } catch(e) {
         loadedImgs.push(null);
+        photoHeights.push(0);
       }
     }
 
     // 메인사진(첫번째 전폭) + 나머지 2장 나란히
-    const mainH   = loadedImgs[0] ? MAIN_CROP_H : 0;
-    const colorH  = loadedImgs.slice(1).some(Boolean) ? COLOR_CROP_H : 0;
+    const mainH   = photoHeights[0] || 0;
+    const colorH  = Math.max(photoHeights[1]||0, photoHeights[2]||0);
     const lbl2H   = loadedImgs.slice(1).some(Boolean) ? 40 : 0;
 
     const total = heroH + mainH + copyH + ptH + descH +
@@ -175,28 +177,6 @@ export default async function handler(req, res) {
       return cy;
     }
 
-    // 중앙 크롭 방식으로 이미지 그리기 (비율 유지, 영역에 맞게 자르기)
-    function drawCropped(imgObj, dx, dy, dw, dh) {
-      const img = imgObj.img;
-      const srcRatio = img.width / img.height;
-      const dstRatio = dw / dh;
-      let sx, sy, sw, sh;
-      if (srcRatio > dstRatio) {
-        // 원본이 더 넓음 → 좌우를 자름
-        sh = img.height;
-        sw = Math.round(img.height * dstRatio);
-        sx = Math.round((img.width - sw) / 2);
-        sy = 0;
-      } else {
-        // 원본이 더 높음 → 상하를 자름
-        sw = img.width;
-        sh = Math.round(img.width / dstRatio);
-        sx = 0;
-        sy = Math.round((img.height - sh) / 2);
-      }
-      ctx.drawImage(img, sx, sy, sw, sh, dx, dy, dw, dh);
-    }
-
     let y = 0;
 
     // ── 1. 헤더 ──
@@ -209,10 +189,11 @@ export default async function handler(req, res) {
     centerText(su, y+86, LGRAY, 13);
     y += heroH;
 
-    // ── 2. 메인 사진 (중앙 크롭) ──
+    // ── 2. 메인 사진 ──
     if (loadedImgs[0]?.img && mainH > 0) {
+      // 흰색 배경을 먼저 칠하고 이미지를 그림 (투명 배경 대응)
       fillRect(0, y, W, mainH, BG);
-      drawCropped(loadedImgs[0], 0, y, W, mainH);
+      ctx.drawImage(loadedImgs[0].img, 0, y, W, mainH);
       y += mainH;
     }
 
@@ -247,19 +228,11 @@ export default async function handler(req, res) {
     }
     y += ptH;
 
-    // ── 5. 상세 설명 (100~200자 제한) ──
+    // ── 5. 상세 설명 ──
     fillRect(0, y, W, descH, IVORY);
     line(60, y+36, 100, y+36, GOLD, 2);
     text('PRODUCT STORY', 108, y+31, GOLD, 10);
     let dy = y+60;
-    const paras = (d.description||'').split('\n').filter(Boolean);
-    for (const para of paras) {
-      dy = wrapText(para, 60, dy, W-120, 13, GRAY, 6);
-      dy += 14;
-    }
-    y += descH;
-
-    // 줄바꿈 삽입 (약 60자마다)
     const paras = (d.description||'').split('\n').filter(Boolean);
     for (const para of paras) {
       dy = wrapText(para, 60, dy, W-120, 13, GRAY, 6);
@@ -275,8 +248,8 @@ export default async function handler(req, res) {
 
       // 흰색 배경을 먼저 칠함 (투명 PNG 대응)
       fillRect(0, y, W, colorH, BG);
-      if (loadedImgs[2]?.img) drawCropped(loadedImgs[2], 0,   y, W/2, colorH);
-      if (loadedImgs[1]?.img) drawCropped(loadedImgs[1], W/2, y, W/2, colorH);
+      if (loadedImgs[2]?.img) ctx.drawImage(loadedImgs[2].img, 0,      y, W/2, colorH);
+      if (loadedImgs[1]?.img) ctx.drawImage(loadedImgs[1].img, W/2,    y, W/2, colorH);
       // 라벨
       fillRect(0,    y+colorH-30, W/2, 30, 'rgba(20,20,20,0.85)');
       fillRect(W/2,  y+colorH-30, W/2, 30, 'rgba(240,240,240,0.85)');
