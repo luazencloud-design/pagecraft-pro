@@ -165,14 +165,14 @@ export default async function handler(req, res) {
       ctx.fillStyle = color;
       ctx.fillRect(x, y, w, h);
     }
-    function text(str, x, y, color, size, bold=true) {
+    function text(str, x, y, color, size, bold=false) {
       ctx.fillStyle = color;
-      ctx.font = `${bold ? '700' : '400'} ${size}px "${fontR}", sans-serif`;
+      ctx.font = `${bold ? '900' : '700'} ${size}px "${fontR}", sans-serif`;
       ctx.fillText(str, x, y);
     }
-    function centerText(str, y, color, size, bold=true) {
+    function centerText(str, y, color, size, bold=false) {
       ctx.fillStyle = color;
-      ctx.font = `${bold ? '700' : '400'} ${size}px "${fontR}", sans-serif`;
+      ctx.font = `${bold ? '900' : '700'} ${size}px "${fontR}", sans-serif`;
       const w2 = ctx.measureText(str).width;
       ctx.fillText(str, (W - w2) / 2, y);
     }
@@ -181,9 +181,9 @@ export default async function handler(req, res) {
       ctx.lineWidth = lw;
       ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
     }
-    function wrapText(str, x, y, maxW, size, color, lhAdd=8, bold=true) {
+    function wrapText(str, x, y, maxW, size, color, lhAdd=8, bold=false) {
       ctx.fillStyle = color;
-      ctx.font = `${bold ? '700' : '400'} ${size}px "${fontR}", sans-serif`;
+      ctx.font = `${bold ? '900' : '700'} ${size}px "${fontR}", sans-serif`;
       const lh = size + lhAdd;
       let cur = '';
       let cy = y;
@@ -239,11 +239,11 @@ export default async function handler(req, res) {
     for (let i=0; i<3; i++) {
       const cx = 40 + i*(colW+10);
       ctx.fillStyle = LGRAY;
-      ctx.font = `700 28px "${fontR}", sans-serif`;
+      ctx.font = `900 28px "${fontR}", sans-serif`;
       ctx.fillText(`0${i+1}`, cx, px+42);
       line(cx, px+48, cx+colW-10, px+48, LINE);
       ctx.fillStyle = BLACK;
-      ctx.font = `700 12px "${fontR}", sans-serif`;
+      ctx.font = `900 12px "${fontR}", sans-serif`;
       ctx.fillText((pts[i]||'').slice(0,10), cx, px+64);
       if (pts[i]) wrapText(pts[i], cx, px+82, colW-10, 11, GRAY, 6);
     }
@@ -288,7 +288,7 @@ export default async function handler(req, res) {
     for (const s of specs) {
       line(60, sy+30, W-60, sy+30, LINE);
       ctx.fillStyle = BLACK;
-      ctx.font = `700 12px "${fontR}", sans-serif`;
+      ctx.font = `900 12px "${fontR}", sans-serif`;
       ctx.fillText(s.key, 70, sy+20);
       ctx.fillStyle = GRAY;
       ctx.font = `700 12px "${fontR}", sans-serif`;
