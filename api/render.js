@@ -239,11 +239,11 @@ export default async function handler(req, res) {
     for (let i=0; i<3; i++) {
       const cx = 40 + i*(colW+10);
       ctx.fillStyle = LGRAY;
-      ctx.font = `900 28px "${fontR}", sans-serif`;
+      ctx.font = `1500 28px "${fontR}", sans-serif`;
       ctx.fillText(`0${i+1}`, cx, px+42);
       line(cx, px+48, cx+colW-10, px+48, LINE);
       ctx.fillStyle = BLACK;
-      ctx.font = `700 12px "${fontR}", sans-serif`;
+      ctx.font = `900 12px "${fontR}", sans-serif`;
       ctx.fillText((pts[i]||'').slice(0,10), cx, px+64);
       if (pts[i]) wrapText(pts[i], cx, px+82, colW-10, 11, DARK, 6);
     }
@@ -255,6 +255,7 @@ export default async function handler(req, res) {
     text('PRODUCT STORY', 108, y+31, GOLD, 10);
     let dy = y+60;
     const paras = (d.description||'').split('\n').filter(Boolean);
+    ctx.font = `900 13px "${fontR}", sans-serif`;
     for (const para of paras) {
       dy = wrapText(para, 60, dy, W-120, 13, DARK, 6);
       dy += 14;
@@ -288,10 +289,10 @@ export default async function handler(req, res) {
     for (const s of specs) {
       line(60, sy+30, W-60, sy+30, LINE);
       ctx.fillStyle = BLACK;
-      ctx.font = `900 12px "${fontR}", sans-serif`;
+      ctx.font = `1500 12px "${fontR}", sans-serif`;
       ctx.fillText(s.key, 70, sy+20);
       ctx.fillStyle = DARK;
-      ctx.font = `400 12px "${fontR}", sans-serif`;
+      ctx.font = `900 12px "${fontR}", sans-serif`;
       ctx.fillText(s.value, 220, sy+20);
       sy += 31;
     }
@@ -304,7 +305,7 @@ export default async function handler(req, res) {
     const kws = d.keywords || [];
     let kx = 60, ky = y+50;
     for (const kw of kws) {
-      ctx.font = `400 11px "${fontR}", sans-serif`;
+      ctx.font = `900 11px "${fontR}", sans-serif`;
       const kw2 = '#'+kw;
       const kw_w = ctx.measureText(kw2).width + 18;
       if (kx + kw_w > W-60) { kx=60; ky+=32; }
@@ -323,6 +324,7 @@ export default async function handler(req, res) {
     const cauts = (d.caution||'').split(/[.。]/).filter(c=>c.trim().length>2).slice(0,3);
     let ccy = y+58;
     for (const c of cauts) {
+      ctx.font = `900 11px "${fontR}", sans-serif`;
       ctx.fillStyle = DARK; ctx.beginPath();
       ctx.arc(64, ccy+7, 4, 0, Math.PI*2); ctx.fill();
       ccy = wrapText(c.trim()+'.', 78, ccy, W-138, 12, DARK, 6);
