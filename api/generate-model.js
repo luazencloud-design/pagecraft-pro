@@ -1,6 +1,4 @@
-import { verifySession, setCors, sanitizeError } from './links/_auth.js';
-
-// ── AI 모델 이미지 생성 (보안 버전 — 세션 인증 필요) ──
+// ── AI 모델 이미지 생성 (인증 없음) ──
 // Gemini Imagen API를 사용하여 상품을 착용한 모델 이미지 생성
 // 월 100개 제한 (인메모리 카운터 — 서버리스 환경에서는 KV/DB 필요)
 
@@ -15,13 +13,12 @@ function checkMonthlyLimit() {
 }
 
 export default async function handler(req, res) {
-  setCors(req, res);
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
-
-  // 세션 검증
-  const session = await verifySession(req);
-  if (!session.ok) return res.status(session.status).json({ error: session.error });
 
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) return res.status(500).json({ error: 'API 키가 설정되지 않았습니다.' });
@@ -41,7 +38,6 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: '상품명 또는 카테고리가 필요합니다.' });
     }
 
-    const genderKo = gender === 'male' ? '남성' : '여성';
     const genderEn = gender === 'male' ? 'male' : 'female';
 
     const prompt = `Professional e-commerce product photo of a Korean ${genderEn} model in their late 20s wearing/holding "${productName || category}".
@@ -87,7 +83,7 @@ No text, no watermark, no logo. Photorealistic, 4K quality.`;
     if (!response.ok) {
       console.error('Gemini Imagen 에러:', data);
       return res.status(response.status).json({
-        error: sanitizeError(data.error?.message || `이미지 생성 실패 (${response.status})`)
+        error: data.error?.message || `이미지 생성 실패 (${response.status})`
       });
     }
 
@@ -109,6 +105,6 @@ No text, no watermark, no logo. Photorealistic, 4K quality.`;
 
   } catch (err) {
     console.error('모델 이미지 생성 에러:', err);
-    return res.status(500).json({ error: sanitizeError(err) });
+    return res.status(500).json({ error: err.message });
   }
 }
