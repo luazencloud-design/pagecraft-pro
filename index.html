@@ -1,0 +1,2027 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PageCraft Pro v2.0 — 상품 상세페이지 · 상품명 · 태그 생성기</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Noto+Sans+KR:wght@300;400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+
+/* ── 다크 모드 (기본) ── */
+:root{
+  --bg:#0c0c10;
+  --surface:#13131a;
+  --surface2:#1a1a24;
+  --surface3:#21212e;
+  --border:rgba(255,255,255,0.06);
+  --border2:rgba(255,255,255,0.12);
+  --accent:#e8c97a;
+  --accent2:#f0dfa0;
+  --accent-dim:rgba(232,201,122,0.12);
+  --text:#f0ede8;
+  --text2:#9998a8;
+  --text3:#555568;
+  --green:#3ecf8e;
+  --red:#f87171;
+  --font:'Noto Sans KR',sans-serif;
+  --mono:'DM Mono',monospace;
+  --serif:'Playfair Display',serif;
+  --shadow:rgba(0,0,0,0.4);
+}
+
+/* ── 라이트 모드 ── */
+:root.light{
+  --bg:#f4f3f0;
+  --surface:#ffffff;
+  --surface2:#f0eeeb;
+  --surface3:#e8e6e2;
+  --border:rgba(0,0,0,0.07);
+  --border2:rgba(0,0,0,0.14);
+  --accent:#9b6e1a;
+  --accent2:#7a5210;
+  --accent-dim:rgba(155,110,26,0.10);
+  --text:#1a1a1a;
+  --text2:#5a5a6a;
+  --text3:#aaaabc;
+  --green:#1a7a50;
+  --red:#c0392b;
+  --shadow:rgba(0,0,0,0.12);
+}
+
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--font);overflow:hidden;transition:background 0.3s,color 0.3s}
+
+/* ── 테마 전환 버튼 ── */
+.theme-toggle{
+  width:36px;height:20px;border-radius:10px;
+  background:var(--surface3);border:1px solid var(--border2);
+  cursor:pointer;position:relative;transition:background 0.2s,border-color 0.2s;
+  flex-shrink:0;
+}
+.theme-toggle:hover{border-color:var(--accent)}
+.theme-toggle-knob{
+  position:absolute;top:2px;left:2px;
+  width:14px;height:14px;border-radius:50%;
+  background:var(--text2);transition:transform 0.2s,background 0.2s;
+}
+:root.light .theme-toggle-knob{
+  transform:translateX(16px);
+  background:var(--accent);
+}
+.theme-label{
+  font-family:var(--mono);font-size:10px;color:var(--text3);
+  white-space:nowrap;transition:color 0.2s;
+}
+
+/* ── TITLEBAR ── */
+.titlebar{
+  height:48px;background:var(--surface);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;padding:0 24px;gap:16px;
+  position:fixed;top:0;left:0;right:0;z-index:100;
+}
+.tb-dots{display:flex;gap:7px}
+.tb-dot{width:12px;height:12px;border-radius:50%}
+.tb-dot.r{background:#ff5f57}.tb-dot.a{background:#febc2e}.tb-dot.g{background:#28c840}
+.tb-logo{
+  flex:1;text-align:center;
+  font-family:var(--serif);font-size:15px;letter-spacing:0.5px;color:var(--accent);
+}
+.tb-badge{
+  font-family:var(--mono);font-size:10px;color:var(--text3);
+  background:var(--surface2);padding:3px 10px;border-radius:4px;border:1px solid var(--border);
+}
+
+/* ── MAIN LAYOUT ── */
+.app{
+  display:grid;
+  grid-template-columns:450px 1fr 480px;
+  height:calc(100vh - 48px);
+  margin-top:48px;
+  overflow:hidden;
+}
+
+/* ── LEFT PANEL ── */
+.left-panel{
+  background:var(--surface);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;overflow-y:auto;
+}
+.left-panel::-webkit-scrollbar{width:3px}
+.left-panel::-webkit-scrollbar-thumb{background:var(--surface3);border-radius:2px}
+
+.panel-section{padding:20px 18px 8px}
+.panel-section-title{
+  font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;
+  color:var(--text3);margin-bottom:12px;
+}
+
+/* Upload Zone */
+.upload-zone{
+  border:1.5px dashed var(--border2);border-radius:12px;
+  padding:70px 14px;text-align:center;cursor:pointer;
+  transition:all 0.2s;position:relative;overflow:hidden;
+}
+.upload-zone::before{
+  content:'';position:absolute;inset:0;
+  background:var(--accent-dim);opacity:0;transition:opacity 0.2s;
+}
+.upload-zone:hover::before,.upload-zone.drag::before{opacity:1}
+.upload-zone:hover,.upload-zone.drag{border-color:var(--accent)}
+.upload-icon{font-size:24px;margin-bottom:8px}
+.upload-zone h4{font-size:13px;font-weight:600;margin-bottom:4px;color:var(--text)}
+.upload-zone p{font-size:11px;color:var(--text2);line-height:1.5}
+
+/* Thumb Grid */
+.thumb-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;padding:6px 18px 0}
+.single-thumb{padding:8px 18px 0}
+.single-thumb .sth-wrap{position:relative;border-radius:8px;overflow:hidden;border:1px solid var(--border)}
+.single-thumb img{width:100%;display:block}
+.single-thumb .sth-del{position:absolute;top:6px;right:6px;background:rgba(0,0,0,0.75);color:#fff;border:none;border-radius:50%;width:24px;height:24px;cursor:pointer;font-size:12px;line-height:1}
+.thumb{
+  position:relative;aspect-ratio:1;border-radius:8px;overflow:hidden;
+  border:1px solid var(--border);cursor:pointer;transition:border-color 0.15s;
+}
+.thumb:hover{border-color:var(--border2)}
+.thumb img{width:100%;height:100%;object-fit:cover}
+.thumb-del{
+  position:absolute;top:3px;right:3px;width:18px;height:18px;
+  border-radius:50%;background:rgba(0,0,0,0.75);border:none;color:#fff;
+  font-size:10px;cursor:pointer;opacity:0;transition:opacity 0.15s;
+  display:flex;align-items:center;justify-content:center;
+}
+.thumb:hover .thumb-del{opacity:1}
+
+/* Fields */
+.divider{height:1px;background:var(--border);margin:8px 0}
+.field-group{padding:0 18px 10px}
+.field-label{
+  font-size:11px;font-weight:500;color:var(--text2);
+  margin-bottom:6px;display:flex;align-items:center;gap:5px;
+}
+.field-label .dot{width:5px;height:5px;border-radius:50%;background:var(--accent);opacity:0.7}
+.field-input,.field-select,.field-textarea{
+  width:100%;background:var(--surface2);border:1px solid var(--border);
+  border-radius:8px;padding:8px 11px;font-size:12.5px;color:var(--text);
+  font-family:var(--font);outline:none;transition:border-color 0.15s,box-shadow 0.15s;
+  appearance:none;
+}
+.field-input:focus,.field-select:focus,.field-textarea:focus{
+  border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-dim);
+}
+.field-input::placeholder,.field-textarea::placeholder{color:var(--text3);font-size:12px}
+.field-textarea{resize:vertical;min-height:68px;line-height:1.6}
+
+/* Chips */
+.chip-row{display:flex;flex-wrap:wrap;gap:5px;padding:0 18px 10px}
+.chip{
+  padding:4px 10px;border-radius:20px;font-size:11px;cursor:pointer;
+  border:1px solid var(--border);background:transparent;color:var(--text2);
+  transition:all 0.15s;font-family:var(--font);
+}
+.chip:hover{border-color:var(--border2);color:var(--text)}
+.chip.on{background:var(--accent-dim);border-color:var(--accent);color:var(--accent2)}
+
+/* Generate Button */
+.gen-wrap{padding:14px 18px 20px;margin-top:auto}
+.gen-btn{
+  width:100%;padding:12px;
+  background:var(--accent);border:none;border-radius:10px;
+  color:#0c0c10;font-size:13.5px;font-weight:700;font-family:var(--font);
+  cursor:pointer;letter-spacing:0.3px;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  transition:all 0.2s;position:relative;overflow:hidden;
+}
+.gen-btn:hover:not(:disabled){
+  background:var(--accent2);transform:translateY(-1px);
+  box-shadow:0 8px 24px rgba(232,201,122,0.3);
+}
+.gen-btn:disabled{
+  background:var(--surface3);color:var(--text3);cursor:not-allowed;transform:none;box-shadow:none;
+}
+.gen-spinner{
+  width:15px;height:15px;border:2px solid rgba(12,12,16,0.3);
+  border-top-color:#0c0c10;border-radius:50%;
+  animation:spin 0.7s linear infinite;display:none;
+}
+.gen-btn.loading .gen-spinner{display:block}
+.gen-btn.loading .gen-txt{display:none}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── CENTER CANVAS ── */
+.canvas{
+  background:var(--bg);overflow-y:auto;
+  display:flex;flex-direction:column;align-items:center;padding:28px 20px;
+}
+.canvas::-webkit-scrollbar{width:4px}
+.canvas::-webkit-scrollbar-thumb{background:var(--surface3);border-radius:2px}
+
+.canvas-toolbar{
+  width:100%;max-width:660px;display:flex;align-items:center;gap:8px;margin-bottom:18px;
+}
+.canvas-file{font-size:11px;color:var(--text3);font-family:var(--mono);margin-right:auto}
+.toolbar-btn{
+  padding:6px 14px;border-radius:6px;font-size:12px;font-weight:500;
+  border:1px solid var(--border);background:var(--surface);color:var(--text2);
+  cursor:pointer;font-family:var(--font);transition:all 0.15s;
+  display:flex;align-items:center;gap:5px;
+}
+.toolbar-btn:hover{border-color:var(--border2);color:var(--text)}
+.toolbar-btn.primary{background:var(--accent);border-color:var(--accent);color:#0c0c10;font-weight:700}
+.toolbar-btn.primary:hover{background:var(--accent2)}
+
+/* Preview Frame */
+.preview-frame{
+  width:100%;max-width:660px;
+  background:var(--surface);border:1px solid var(--border);border-radius:16px;
+  overflow:hidden;overflow-y:auto;min-height:500px;
+}
+.frame-bar{
+  height:36px;background:var(--surface2);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;padding:0 14px;gap:10px;
+}
+.frame-dots{display:flex;gap:5px}
+.frame-dot{width:10px;height:10px;border-radius:50%}
+.frame-dot.r{background:rgba(255,95,87,0.4)}.frame-dot.a{background:rgba(254,188,46,0.4)}.frame-dot.g{background:rgba(40,200,64,0.4)}
+.frame-url{
+  flex:1;background:var(--surface3);border-radius:5px;height:20px;
+  display:flex;align-items:center;padding:0 10px;
+  font-family:var(--mono);font-size:10px;color:var(--text3);
+}
+
+/* Empty State */
+.empty-state{
+  display:flex;flex-direction:column;align-items:center;
+  justify-content:center;padding:80px 30px;text-align:center;
+}
+.empty-icon{
+  width:72px;height:72px;background:var(--surface2);border-radius:18px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:30px;margin-bottom:20px;border:1px solid var(--border);
+}
+.empty-state h3{font-size:15px;font-weight:600;margin-bottom:8px;color:var(--text)}
+.empty-state p{font-size:13px;color:var(--text2);line-height:1.7}
+
+/* Loading State */
+.loading-state{
+  display:none;flex-direction:column;align-items:center;
+  justify-content:center;padding:80px 30px;text-align:center;
+}
+.loading-state.show{display:flex}
+.ai-ring-wrap{width:64px;height:64px;position:relative;margin-bottom:24px}
+.ai-ring{
+  position:absolute;inset:0;border-radius:50%;
+  border:2px solid transparent;border-top-color:var(--accent);
+  animation:spin 1s linear infinite;
+}
+.ai-ring:nth-child(2){inset:8px;border-top-color:var(--green);animation-duration:1.5s;animation-direction:reverse}
+.ai-core{
+  position:absolute;inset:18px;background:var(--accent-dim);border-radius:50%;
+  border:1px solid var(--accent);animation:pulse 2s ease-in-out infinite;
+}
+@keyframes pulse{0%,100%{opacity:0.4;transform:scale(0.9)}50%{opacity:1;transform:scale(1.1)}}
+.loading-msg{font-size:14px;font-weight:500;margin-bottom:5px;color:var(--text)}
+.loading-sub{font-size:11px;color:var(--text2);font-family:var(--mono)}
+
+/* Result Preview */
+.result-preview{display:none;padding:20px;max-height:70vh;overflow-y:auto}
+.result-preview.show{display:block}
+.result-preview::-webkit-scrollbar{width:6px}
+.result-preview::-webkit-scrollbar-track{background:var(--surface2);border-radius:3px}
+.result-preview::-webkit-scrollbar-thumb{background:var(--accent);border-radius:3px;opacity:0.7}
+.result-preview::-webkit-scrollbar-thumb:hover{opacity:1}
+.preview-img{width:100%;border-radius:8px;display:block}
+
+/* ── RIGHT PANEL ── */
+.right-panel{
+  background:var(--surface);border-left:1px solid var(--border);
+  display:flex;flex-direction:column;overflow:hidden;
+}
+.panel-tabs{display:flex;border-bottom:1px solid var(--border)}
+.ptab{
+  flex:1;padding:13px 0;text-align:center;font-size:12px;font-weight:500;
+  color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;
+  transition:all 0.15s;background:none;border-top:none;border-left:none;border-right:none;
+  font-family:var(--font);
+}
+.ptab:hover{color:var(--text2)}
+.ptab.active{color:var(--accent);border-bottom-color:var(--accent)}
+
+.panel-body{flex:1;overflow-y:auto;padding:14px}
+.panel-body::-webkit-scrollbar{width:3px}
+.panel-body::-webkit-scrollbar-thumb{background:var(--surface3);border-radius:2px}
+
+/* Copy Blocks */
+.copy-block{
+  background:var(--surface2);border:1px solid var(--border);
+  border-radius:10px;margin-bottom:8px;overflow:hidden;
+}
+.copy-block-hdr{
+  padding:9px 13px;display:flex;align-items:center;justify-content:space-between;
+  border-bottom:1px solid var(--border);
+}
+.copy-block-title{font-size:11px;font-weight:600;color:var(--text2)}
+.copy-btn{
+  padding:3px 10px;background:var(--surface3);border:1px solid var(--border);
+  border-radius:5px;font-size:11px;color:var(--text2);cursor:pointer;
+  font-family:var(--font);transition:all 0.15s;
+}
+.copy-btn:hover{border-color:var(--border2);color:var(--text)}
+.copy-btn.ok{color:var(--green);border-color:var(--green)}
+.copy-block-body{
+  padding:11px 13px;font-size:12px;color:var(--text2);line-height:1.7;white-space:pre-line;
+}
+
+/* Export Panel */
+.export-opt{
+  background:var(--surface2);border:1px solid var(--border);border-radius:10px;
+  padding:14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;
+  cursor:pointer;transition:border-color 0.15s;
+}
+.export-opt:hover{border-color:var(--border2)}
+.export-ico{
+  width:36px;height:36px;background:var(--surface3);border-radius:8px;
+  display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;
+}
+.export-title{font-size:13px;font-weight:600;margin-bottom:2px;color:var(--text)}
+.export-desc{font-size:11px;color:var(--text2)}
+
+/* Status Bar */
+.statusbar{
+  height:26px;background:var(--surface);border-top:1px solid var(--border);
+  display:flex;align-items:center;padding:0 18px;gap:16px;
+  font-size:10px;color:var(--text3);font-family:var(--mono);
+  grid-column:1/-1;
+}
+.status-dot{width:6px;height:6px;border-radius:50%;background:var(--green)}
+.status-right{margin-left:auto}
+
+/* Toast */
+.toast{
+  position:fixed;bottom:30px;left:50%;
+  transform:translateX(-50%) translateY(16px);
+  background:var(--surface2);border:1px solid var(--border2);
+  border-radius:8px;padding:10px 18px;font-size:13px;color:var(--text);
+  opacity:0;transition:all 0.25s;pointer-events:none;z-index:9999;
+  box-shadow:0 8px 32px rgba(0,0,0,0.6);
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* Error */
+.err-box{
+  margin:16px 20px;padding:12px 14px;
+  background:rgba(248,113,113,0.08);border:1px solid rgba(248,113,113,0.2);
+  border-radius:8px;font-size:12px;color:var(--red);line-height:1.6;display:none;
+  word-break:break-word;overflow-wrap:break-word;
+}
+.err-box.show{display:block}
+
+/* Tool Panels */
+.tool-section-header{margin-bottom:14px}
+.tool-section-title{font-size:13px;font-weight:600;color:var(--text);margin-bottom:6px}
+.tool-section-desc{font-size:11px;color:var(--text2);line-height:1.6}
+.tool-run-btn{
+  width:100%;padding:10px;border-radius:8px;
+  background:var(--accent);border:none;color:#0c0c10;
+  font-size:12.5px;font-weight:700;font-family:var(--font);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  transition:all 0.2s;
+}
+.tool-run-btn:hover:not(:disabled){background:var(--accent2);transform:translateY(-1px)}
+.tool-run-btn:disabled{background:var(--surface3);color:var(--text3);cursor:not-allowed;transform:none}
+.tool-spinner{width:13px;height:13px;border:2px solid rgba(12,12,16,0.3);border-top-color:#0c0c10;border-radius:50%;animation:spin 0.7s linear infinite;display:none}
+.tool-run-btn.loading .tool-spinner{display:block}
+.tool-run-btn.loading .tool-btn-txt{display:none}
+.title-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:11px 13px;margin-bottom:7px;position:relative}
+.title-rank{font-size:10px;font-weight:700;color:var(--accent);letter-spacing:1px;margin-bottom:5px}
+.title-text{font-size:12.5px;color:var(--text);line-height:1.5;padding-right:52px}
+.title-copy{position:absolute;top:11px;right:11px;padding:3px 9px;background:var(--surface3);border:1px solid var(--border);border-radius:5px;font-size:10px;color:var(--text2);cursor:pointer;font-family:var(--font);transition:all 0.15s}
+.title-copy:hover{border-color:var(--border2);color:var(--text)}
+.title-copy.ok{color:var(--green);border-color:var(--green)}
+.tag-cloud{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px}
+.tag-item{padding:4px 10px;border-radius:20px;font-size:11px;background:var(--surface2);border:1px solid var(--border);color:var(--text2);cursor:pointer;transition:all 0.15s;font-family:var(--font)}
+.tag-item:hover{border-color:var(--accent);color:var(--accent)}
+.tag-copy-all{width:100%;padding:9px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;font-size:12px;color:var(--text2);cursor:pointer;font-family:var(--font);transition:all 0.15s}
+.tag-copy-all:hover{border-color:var(--border2);color:var(--text)}
+.tag-copy-all.ok{color:var(--green);border-color:var(--green)}
+.tool-empty{text-align:center;padding:30px 16px;color:var(--text3);font-size:12px;line-height:1.7;word-break:break-word;overflow-wrap:break-word}
+
+/* 배경 제거 토글 */
+.bgremove-row{
+  display:flex;align-items:center;gap:8px;padding:8px 18px 4px;
+}
+.bgremove-toggle{
+  width:34px;height:18px;border-radius:9px;
+  background:var(--surface3);border:1px solid var(--border2);
+  cursor:pointer;position:relative;transition:all 0.2s;flex-shrink:0;
+}
+.bgremove-toggle.on{background:var(--accent);border-color:var(--accent)}
+.bgremove-toggle-knob{
+  position:absolute;top:2px;left:2px;width:12px;height:12px;
+  border-radius:50%;background:var(--text2);transition:all 0.2s;
+}
+.bgremove-toggle.on .bgremove-toggle-knob{
+  transform:translateX(16px);background:#0c0c10;
+}
+.bgremove-label{font-size:11px;color:var(--text2);flex:1}
+.bgremove-badge{
+  font-size:9px;padding:2px 6px;border-radius:4px;
+  background:var(--accent-dim);color:var(--accent);font-weight:600;
+}
+.bgremove-status{
+  font-size:10px;color:var(--text3);font-family:var(--mono);
+  padding:0 18px 6px;display:none;
+}
+.bgremove-status.show{display:block}
+.bgremove-progress{
+  height:3px;background:var(--surface3);border-radius:2px;
+  margin-top:4px;overflow:hidden;
+}
+.bgremove-progress-bar{
+  height:100%;background:var(--accent);border-radius:2px;
+  width:0%;transition:width 0.3s;
+}
+
+/* 배경 제거 처리 중 오버레이 */
+.thumb-processing{
+  position:absolute;inset:0;background:rgba(12,12,16,0.8);
+  display:flex;align-items:center;justify-content:center;
+  z-index:2;
+}
+.thumb-processing .mini-spinner{
+  width:16px;height:16px;border:2px solid rgba(232,201,122,0.3);
+  border-top-color:var(--accent);border-radius:50%;
+  animation:spin 0.7s linear infinite;
+}
+.thumb-done{
+  position:absolute;top:3px;left:3px;
+  width:16px;height:16px;border-radius:50%;
+  background:var(--green);color:#fff;font-size:9px;
+  display:flex;align-items:center;justify-content:center;
+  z-index:2;
+}
+
+/* Scrollbar global */
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-thumb{background:var(--surface3);border-radius:2px}
+
+/* ── 세션 잠금 오버레이 ── */
+.lock-overlay{
+  position:fixed;inset:0;z-index:9999;
+  background:rgba(12,12,16,0.85);backdrop-filter:blur(12px);
+  display:flex;align-items:center;justify-content:center;
+  transition:opacity 0.4s;
+}
+.lock-overlay.hidden{opacity:0;pointer-events:none}
+.lock-card{
+  background:var(--surface);border:1px solid var(--border2);border-radius:20px;
+  padding:48px 40px;text-align:center;max-width:420px;width:90%;
+  box-shadow:0 24px 64px rgba(0,0,0,0.5);
+}
+.lock-icon{font-size:56px;margin-bottom:20px}
+.lock-card h2{font-family:var(--serif);font-size:22px;color:var(--accent);margin-bottom:10px}
+.lock-card p{color:var(--text2);font-size:13px;line-height:1.8;margin-bottom:24px}
+.lock-card .lock-badge{
+  display:inline-block;font-family:var(--mono);font-size:11px;
+  color:var(--text3);background:var(--surface2);border:1px solid var(--border);
+  padding:4px 12px;border-radius:6px;
+}
+.lock-card a.lock-admin{
+  display:inline-block;margin-top:16px;font-size:12px;color:var(--accent);
+  text-decoration:none;opacity:0.6;transition:opacity 0.2s;
+}
+.lock-card a.lock-admin:hover{opacity:1}
+@keyframes pulse-warn{0%,100%{opacity:1}50%{opacity:0.5}}
+
+/* ── AI 모델 이미지 생성 토글 ── */
+.aimodel-row{
+  display:flex;align-items:center;gap:8px;padding:8px 18px 4px;
+}
+.aimodel-toggle{
+  width:34px;height:18px;border-radius:9px;
+  background:var(--surface3);border:1px solid var(--border2);
+  cursor:pointer;position:relative;transition:all 0.2s;flex-shrink:0;
+}
+.aimodel-toggle.on{background:var(--accent);border-color:var(--accent)}
+.aimodel-toggle-knob{
+  position:absolute;top:2px;left:2px;width:12px;height:12px;
+  border-radius:50%;background:var(--text2);transition:all 0.2s;
+}
+.aimodel-toggle.on .aimodel-toggle-knob{
+  transform:translateX(16px);background:#0c0c10;
+}
+.aimodel-label{font-size:11px;color:var(--text2);flex:1}
+.aimodel-badge{
+  font-size:9px;padding:2px 6px;border-radius:4px;
+  background:rgba(62,207,142,0.12);color:var(--green);font-weight:600;
+}
+/* 성별 선택 (AI 모델 스위치 ON일 때만 표시) */
+.aimodel-gender-row{
+  display:none;align-items:center;gap:8px;padding:2px 18px 6px;
+}
+.aimodel-gender-row.show{display:flex}
+.gender-switch{
+  display:flex;border:1px solid var(--border2);border-radius:6px;overflow:hidden;
+}
+.gender-opt{
+  padding:4px 12px;font-size:10px;font-weight:600;cursor:pointer;
+  background:var(--surface2);color:var(--text3);border:none;
+  font-family:var(--font);transition:all 0.15s;
+}
+.gender-opt.active{background:var(--accent);color:#0c0c10}
+.aimodel-count{
+  font-size:10px;color:var(--text3);font-family:var(--mono);margin-left:auto;
+}
+
+/* ── 이미지 드래그 순서 변경 ── */
+.thumb.dragging{opacity:0.4;border-color:var(--accent)}
+.thumb.drag-over{border:2px solid var(--accent);transform:scale(1.05)}
+
+/* ── 선택 배경 제거 체크박스 ── */
+.thumb-checkbox{
+  position:absolute;bottom:3px;left:3px;width:16px;height:16px;
+  border-radius:4px;background:rgba(0,0,0,0.6);border:1px solid rgba(255,255,255,0.3);
+  cursor:pointer;z-index:3;display:flex;align-items:center;justify-content:center;
+  font-size:10px;color:transparent;transition:all 0.15s;
+}
+.thumb-checkbox.checked{
+  background:var(--accent);border-color:var(--accent);color:#0c0c10;
+}
+</style>
+</head>
+<body>
+
+<div class="titlebar">
+  <img src="data:image/png;base64,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" alt="MagicOne" style="height:50px;object-fit:contain;flex-shrink:0;">
+  <div class="tb-logo"> </div>
+  <div style="display:flex;align-items:center;gap:8px">
+    <span class="theme-label" id="themeLabel">🌙 다크</span>
+    <div class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="라이트/다크 모드 전환">
+      <div class="theme-toggle-knob"></div>
+    </div>
+  </div>
+  <div class="tb-badge">패션 · 의류 · 잡화</div>
+  <a href="/admin" class="tb-badge" style="text-decoration:none;color:var(--accent);border-color:var(--accent);cursor:pointer" title="링크 관리 어드민">🔐 링크관리</a>
+</div>
+
+<div class="lock-overlay" id="lockOverlay">
+  <div class="lock-card">
+    <div class="lock-icon">🔒</div>
+    <h2>접근 권한이 필요합니다</h2>
+    <p>이 AI 도구는 관리자가 발급한<br>전용 링크를 통해서만 사용할 수 있습니다.</p>
+    <div class="lock-badge">인증된 링크로 접속해주세요</div>
+    <br>
+    <a href="/admin" class="lock-admin">관리자이신가요? →</a>
+  </div>
+</div>
+
+<div class="app">
+
+<aside class="left-panel">
+
+  <div class="panel-section">
+    <div class="panel-section-title">상품 사진</div>
+    <div class="upload-zone" id="dz">
+      <div class="upload-icon">📷</div>
+      <h4>사진 업로드</h4>
+      <p>클릭하거나 드래그<br>JPG · PNG · 최대 10장</p>
+      <input type="file" id="fi" accept="image/*" multiple style="display:none">
+    </div>
+  </div>
+  <div class="bgremove-row">
+    <div class="bgremove-toggle" id="bgToggle" onclick="toggleBgRemove()">
+      <div class="bgremove-toggle-knob"></div>
+    </div>
+    <span class="bgremove-label">배경 자동 제거</span>
+    <span class="bgremove-badge">AI</span>
+  </div>
+  <div class="bgremove-status" id="bgStatus">
+    <span id="bgStatusText">배경 제거 준비 중...</span>
+    <div class="bgremove-progress"><div class="bgremove-progress-bar" id="bgProgressBar"></div></div>
+  </div>
+
+  <div class="aimodel-row">
+    <div class="aimodel-toggle" id="aiModelToggle" onclick="toggleAiModel()">
+      <div class="aimodel-toggle-knob"></div>
+    </div>
+    <span class="aimodel-label">AI 모델 이미지 생성</span>
+    <span class="aimodel-badge">AI</span>
+  </div>
+  <div class="aimodel-gender-row" id="aiModelGenderRow">
+    <span style="font-size:10px;color:var(--text3);margin-left:18px">모델 성별</span>
+    <div class="gender-switch">
+      <button class="gender-opt active" data-gender="female" onclick="setGender(this)">여성</button>
+      <button class="gender-opt" data-gender="male" onclick="setGender(this)">남성</button>
+    </div>
+    <span class="aimodel-count" id="aiModelCount"></span>
+  </div>
+
+  <div id="thumbGrid" class="thumb-grid"></div>
+
+  <div class="divider"></div>
+
+  <div class="panel-section"><div class="panel-section-title">상품 정보</div></div>
+
+  <div class="field-group">
+    <div class="field-label"><span class="dot"></span>브랜드명</div>
+    <input id="brand" class="field-input" placeholder="예: 내셔널 지오그래픽">
+  </div>
+  <div class="field-group">
+    <div class="field-label"><span class="dot"></span>상품명</div>
+    <input id="pname" class="field-input" placeholder="예: 슬라이드 슬리퍼 남녀공용">
+  </div>
+  <div class="field-group">
+    <div class="field-label"><span class="dot"></span>판매 가격</div>
+    <input id="price" class="field-input" placeholder="예: 39,900">
+  </div>
+  <div class="field-group">
+    <div class="field-label"><span class="dot"></span>카테고리</div>
+    <select id="cat" class="field-select">
+      <option>패딩/점퍼</option><option>집업/후리스</option><option>티셔츠/맨투맨</option>
+      <option>바지/하의</option><option>가방/배낭</option><option>모자/액세서리</option>
+      <option>신발/부츠</option><option>슬리퍼/샌들</option><option>스카프/머플러</option>
+      <option>기타 의류/잡화</option>
+    </select>
+  </div>
+  <div class="field-group">
+    <div class="field-label"><span class="dot"></span>플랫폼</div>
+    <select id="pf" class="field-select">
+      <option>쿠팡</option><option>스마트스토어</option>
+      <option>쿠팡+스마트스토어</option><option>기타</option>
+    </select>
+  </div>
+  <div class="field-group">
+    <div class="field-label"><span class="dot"></span>추가 설명 (선택)</div>
+    <textarea id="memo" class="field-textarea" placeholder="색상, 소재, 특징, 타깃 고객 등 자유롭게 입력"></textarea>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="panel-section"><div class="panel-section-title">스토어 소개 (헤더 위)</div></div>
+  <div class="panel-section" style="padding-top:0">
+    <div class="upload-zone" id="dzStore">
+      <div class="upload-icon">🏪</div>
+      <h4>스토어 소개 이미지</h4>
+      <p>상세페이지 맨 위(헤더 위)에 표시<br>이미지 파일 1장</p>
+      <input type="file" id="fiStore" accept="image/*" style="display:none">
+    </div>
+    <div id="storeThumb" class="single-thumb"></div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="panel-section"><div class="panel-section-title">약관 (푸터 아래)</div></div>
+  <div class="panel-section" style="padding-top:0">
+    <div class="upload-zone" id="dzTerms">
+      <div class="upload-icon">📜</div>
+      <h4>약관 이미지</h4>
+      <p>상세페이지 맨 아래(푸터 아래)에 표시<br>이미지 파일 1장</p>
+      <input type="file" id="fiTerms" accept="image/*" style="display:none">
+    </div>
+    <div id="termsThumb" class="single-thumb"></div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="panel-section"><div class="panel-section-title">강조 특징</div></div>
+  <div class="chip-row" id="chips">
+    <button class="chip" data-v="방수">방수</button>
+    <button class="chip" data-v="방풍">방풍</button>
+    <button class="chip" data-v="보온">보온</button>
+    <button class="chip" data-v="경량">경량</button>
+    <button class="chip" data-v="신축성">신축성</button>
+    <button class="chip" data-v="UV차단">UV차단</button>
+    <button class="chip" data-v="친환경">친환경</button>
+    <button class="chip" data-v="남녀공용">남녀공용</button>
+    <button class="chip" data-v="캠핑">캠핑</button>
+    <button class="chip" data-v="일상착용">일상착용</button>
+    <button class="chip" data-v="선물용">선물용</button>
+    <button class="chip" data-v="커플">커플</button>
+  </div>
+
+  <div class="divider"></div>
+  <div class="gen-wrap">
+    <button class="gen-btn" id="genBtn">
+      <div class="gen-spinner"></div>
+      <span class="gen-txt">✦ AI 상세페이지 생성</span>
+    </button>
+  </div>
+</aside>
+
+<main class="canvas">
+  <div class="canvas-toolbar">
+    <span class="canvas-file">preview.html</span>
+    <button class="toolbar-btn" id="copyAllBtn" style="display:none" onclick="copyAll()">📋 전체 복사</button>
+    <button class="toolbar-btn primary" id="dlBtn" style="display:none" onclick="downloadImg()">⬇ 이미지 저장</button>
+  </div>
+
+  <div class="preview-frame" id="previewFrame">
+    <div class="frame-bar">
+      <div class="frame-dots">
+        <div class="frame-dot r"></div><div class="frame-dot a"></div><div class="frame-dot g"></div>
+      </div>
+      <div class="frame-url">pagecraft://preview · 상세페이지 미리보기</div>
+    </div>
+
+    <div class="empty-state" id="emptyState">
+      <div class="empty-icon">🛍</div>
+      <h3>상품 정보를 입력해주세요</h3>
+      <p>사진을 업로드하고 상품 정보를 입력한 뒤<br>AI 생성 버튼을 누르면 바로 만들어집니다.</p>
+    </div>
+
+    <div class="loading-state" id="loadingState">
+      <div class="ai-ring-wrap">
+        <div class="ai-ring"></div>
+        <div class="ai-ring"></div>
+        <div class="ai-core"></div>
+      </div>
+      <div class="loading-msg" id="loadMsg">이미지 분석 중...</div>
+      <div class="loading-sub" id="loadSub">AI가 상품을 파악하고 있습니다</div>
+    </div>
+
+    <div class="err-box" id="errBox"></div>
+    <div class="result-preview" id="resultPreview">
+      <img id="previewImg" class="preview-img" src="" alt="상세페이지 미리보기">
+    </div>
+  </div>
+</main>
+
+<aside class="right-panel">
+  <div class="panel-tabs">
+    <button class="ptab active" data-tab="copy">📄 텍스트</button>
+    <button class="ptab" data-tab="title">✨ 상품명</button>
+    <button class="ptab" data-tab="tags">🏷 태그</button>
+    <button class="ptab" data-tab="export">⬇ 내보내기</button>
+  </div>
+
+  <div class="panel-body" id="panelCopy">
+    <div style="text-align:center;padding:60px 16px;color:var(--text3);font-size:13px;line-height:1.8">
+      생성 후 각 항목을<br>바로 복사할 수 있습니다
+    </div>
+  </div>
+
+  <div class="panel-body" id="panelTitle" style="display:none">
+    <div class="tool-section-header">
+      <div class="tool-section-title">✨ 상품명 최적화</div>
+      <div class="tool-section-desc">SEO에 최적화된 상품명 5가지를 생성합니다.<br>검색 노출과 클릭률을 높이는 버전을 선택하세요.</div>
+    </div>
+    <button class="tool-run-btn" id="titleBtn" onclick="runTitleGen()">
+      <span class="tool-btn-txt">✨ 최적화 상품명 5개 생성</span>
+      <div class="tool-spinner"></div>
+    </button>
+    <div id="titleResult" style="margin-top:12px"></div>
+  </div>
+
+  <div class="panel-body" id="panelTags" style="display:none">
+    <div class="tool-section-header">
+      <div class="tool-section-title">🏷 쿠팡 태그 20개</div>
+      <div class="tool-section-desc">검색량과 연관성 기반의 쿠팡 최적화 태그를 생성합니다.</div>
+    </div>
+    <button class="tool-run-btn" id="tagsBtn" onclick="runTagGen()">
+      <span class="tool-btn-txt">🏷 태그 20개 생성</span>
+      <div class="tool-spinner"></div>
+    </button>
+    <div id="tagsResult" style="margin-top:12px"></div>
+  </div>
+
+  <div class="panel-body" id="panelExport" style="display:none">
+    <div style="font-size:10px;color:var(--text3);margin-bottom:14px;letter-spacing:2px;text-transform:uppercase;font-weight:600">내보내기 옵션</div>
+    <div class="export-opt" onclick="downloadImg()">
+      <div class="export-ico">🖼</div>
+      <div><div class="export-title">이미지 저장 (PNG)</div><div class="export-desc">상세페이지 이미지 다운로드</div></div>
+    </div>
+    <div class="export-opt" onclick="copyAll()">
+      <div class="export-ico">📋</div>
+      <div><div class="export-title">전체 텍스트 복사</div><div class="export-desc">모든 내용 클립보드 복사</div></div>
+    </div>
+  </div>
+</aside>
+
+<div class="statusbar" style="position:fixed;bottom:0;left:0;right:0;z-index:50">
+  <div style="display:flex;align-items:center;gap:5px"><div class="status-dot"></div><span>Ready</span></div>
+  <span id="statusImgs">사진 0장</span>
+  <span id="statusPf">플랫폼: 쿠팡</span>
+  <span class="status-right">PageCraft Pro v2.0</span>
+</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── 세션 검증 + 실시간 만료 감시 ─────────────────────────────────
+let sessionValid = false;
+let _sessionToken = null;
+let _sessionPollTimer = null;
+let _sessionExpiryTimer = null;
+let _countdownTimer = null;
+
+const SESSION_POLL_INTERVAL = 15000; // 15초마다 서버 검증
+const SESSION_STORAGE_KEY = 'pagecraft_session';
+
+(async function initSession() {
+  const params = new URLSearchParams(window.location.search);
+  // URL 파라미터 우선, 없으면 sessionStorage에서 복원
+  const s = params.get('s') || sessionStorage.getItem(SESSION_STORAGE_KEY);
+  if (!s) return; // 세션 없으면 잠금 유지
+
+  _sessionToken = s;
+
+  try {
+    const res = await fetch('/api/links/check-session', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sessionToken: s })
+    });
+    const data = await res.json();
+    if (data.valid) {
+      sessionValid = true;
+      // sessionStorage에 저장 (새로고침 시 복원용)
+      sessionStorage.setItem(SESSION_STORAGE_KEY, s);
+      document.getElementById('lockOverlay').classList.add('hidden');
+      // URL에서 세션 파라미터 숨기기
+      history.replaceState(null, '', '/');
+
+      // ▶ 만료 시간이 있으면 정밀 타이머 설정
+      if (data.expiresAt) {
+        _setupExpiryTimer(data.expiresAt);
+        _setupCountdown(data.expiresAt);
+      }
+
+      // ▶ 주기적 서버 검증 시작 (관리자가 수동 비활성화/삭제 시 대응)
+      _startSessionPolling();
+    } else {
+      // 세션이 유효하지 않으면 저장된 토큰 제거
+      sessionStorage.removeItem(SESSION_STORAGE_KEY);
+      _sessionToken = null;
+    }
+  } catch (e) {
+    console.error('세션 확인 실패:', e);
+    sessionStorage.removeItem(SESSION_STORAGE_KEY);
+    _sessionToken = null;
+  }
+})();
+
+// 만료 시각에 정확히 맞춰 권한 차단
+// ⚠️ setTimeout은 32비트 정수 한계(≈24.8일)를 초과하면 즉시 실행됨
+// → 24시간 단위로 나눠서 재스케줄링
+const TIMER_SAFE_MAX = 24 * 60 * 60 * 1000; // 24시간
+
+function _setupExpiryTimer(expiresAt) {
+  if (_sessionExpiryTimer) clearTimeout(_sessionExpiryTimer);
+  const remaining = new Date(expiresAt).getTime() - Date.now();
+  if (remaining <= 0) {
+    _revokeSession('LINK_EXPIRED', '링크의 유효 기간이 만료되었습니다.');
+    return;
+  }
+  // 남은 시간이 안전 한계를 초과하면 24시간 후 재확인
+  const delay = Math.min(remaining, TIMER_SAFE_MAX);
+  _sessionExpiryTimer = setTimeout(() => {
+    _setupExpiryTimer(expiresAt); // 재귀: 남은 시간 다시 계산
+  }, delay);
+}
+
+// 남은 시간 카운트다운 표시
+function _setupCountdown(expiresAt) {
+  // 카운트다운 배지가 없으면 생성
+  let badge = document.getElementById('sessionCountdown');
+  if (!badge) {
+    badge = document.createElement('div');
+    badge.id = 'sessionCountdown';
+    badge.style.cssText = `
+      position:fixed;bottom:16px;right:16px;z-index:9998;
+      font-family:var(--mono);font-size:12px;
+      background:var(--surface);border:1px solid var(--border2);border-radius:10px;
+      padding:8px 14px;color:var(--text2);
+      backdrop-filter:blur(8px);transition:all 0.3s;
+      box-shadow:0 4px 16px rgba(0,0,0,0.3);
+    `;
+    document.body.appendChild(badge);
+  }
+
+  if (_countdownTimer) clearInterval(_countdownTimer);
+  _countdownTimer = setInterval(() => {
+    const left = new Date(expiresAt).getTime() - Date.now();
+    if (left <= 0) {
+      badge.innerHTML = '⏰ <span style="color:var(--red)">만료됨</span>';
+      clearInterval(_countdownTimer);
+      return;
+    }
+    const h = Math.floor(left / 3600000);
+    const m = Math.floor((left % 3600000) / 60000);
+    const s = Math.floor((left % 60000) / 1000);
+    const timeStr = h > 0 ? `${h}시간 ${m}분 ${s}초` : m > 0 ? `${m}분 ${s}초` : `${s}초`;
+    badge.innerHTML = `⏱ 남은 시간: <span style="color:${left < 60000 ? 'var(--red)' : 'var(--accent)'};font-weight:500">${timeStr}</span>`;
+
+    // 1분 이하일 때 깜빡임 효과
+    if (left < 60000) {
+      badge.style.borderColor = 'rgba(248,113,113,0.5)';
+      badge.style.animation = 'pulse-warn 1s infinite';
+    }
+  }, 1000);
+}
+
+// 주기적 서버 검증 (관리자 수동 비활성화/삭제 감지)
+function _startSessionPolling() {
+  if (_sessionPollTimer) clearInterval(_sessionPollTimer);
+  _sessionPollTimer = setInterval(async () => {
+    if (!_sessionToken || !sessionValid) {
+      clearInterval(_sessionPollTimer);
+      return;
+    }
+    try {
+      const res = await fetch('/api/links/check-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionToken: _sessionToken })
+      });
+      const data = await res.json();
+
+      if (!data.valid) {
+        const codeMsg = {
+          'LINK_EXPIRED': '링크의 유효 기간이 만료되었습니다.',
+          'LINK_DELETED': '링크가 삭제되었습니다.',
+          'LINK_INACTIVE': '관리자가 링크를 비활성화했습니다.',
+          'SESSION_EXPIRED': '세션이 만료되었습니다.',
+        };
+        _revokeSession(data.code || 'UNKNOWN', codeMsg[data.code] || data.error || '세션이 종료되었습니다.');
+      } else if (data.expiresAt) {
+        // 서버에서 받은 최신 만료시간으로 타이머 갱신
+        _setupExpiryTimer(data.expiresAt);
+      }
+    } catch (e) {
+      console.warn('세션 폴링 실패 (네트워크 오류):', e);
+    }
+  }, SESSION_POLL_INTERVAL);
+}
+
+// 즉시 권한 차단 실행
+function _revokeSession(code, message) {
+  if (!sessionValid) return; // 이미 차단됨
+  sessionValid = false;
+  _sessionToken = null;
+  sessionStorage.removeItem(SESSION_STORAGE_KEY);
+
+  // 모든 타이머 정리
+  if (_sessionPollTimer) clearInterval(_sessionPollTimer);
+  if (_sessionExpiryTimer) clearTimeout(_sessionExpiryTimer);
+  if (_countdownTimer) clearInterval(_countdownTimer);
+
+  // 카운트다운 배지 제거
+  const badge = document.getElementById('sessionCountdown');
+  if (badge) badge.remove();
+
+  // 잠금 오버레이 표시 (메시지 업데이트)
+  const overlay = document.getElementById('lockOverlay');
+  const codeIcons = {
+    'LINK_EXPIRED': '⏰',
+    'LINK_DELETED': '🗑️',
+    'LINK_INACTIVE': '⏸️',
+    'SESSION_EXPIRED': '🔒',
+  };
+  overlay.querySelector('.lock-icon').textContent = codeIcons[code] || '🔒';
+  overlay.querySelector('h2').textContent = code === 'LINK_EXPIRED' ? '링크가 만료되었습니다' :
+                                            code === 'LINK_DELETED' ? '링크가 삭제되었습니다' :
+                                            code === 'LINK_INACTIVE' ? '링크가 비활성화되었습니다' :
+                                            '세션이 종료되었습니다';
+  overlay.querySelector('p').innerHTML = message + '<br><br>계속 사용하시려면 관리자에게<br>새로운 링크를 요청해주세요.';
+  overlay.querySelector('.lock-badge').textContent = '접근 권한이 만료되었습니다';
+  overlay.classList.remove('hidden');
+
+  // 진행 중인 작업 알림
+  toast('🚫 접근 권한이 만료되어 세션이 종료되었습니다.');
+}
+
+function requireSession() {
+  if (!sessionValid) {
+    toast('🔒 인증된 링크를 통해 접속해야 AI 기능을 사용할 수 있습니다.');
+    return false;
+  }
+  return true;
+}
+
+// ── 세션 토큰 포함 API 요청 헤더 ──
+function apiHeaders() {
+  return {
+    'Content-Type': 'application/json',
+    'X-Session-Token': _sessionToken || '',
+  };
+}
+
+const imgs = [];
+let selF = [];
+let resultData = null;
+let generatedImgDataUrl = null;
+let bgRemoveEnabled = false;
+let bgRemoveModel = null;
+let bgRemoveModelLoading = false;
+
+// AI 모델 이미지 생성
+let aiModelEnabled = false;
+let aiModelGender = 'female';
+let aiModelGeneratedThisSession = false; // 상세페이지당 1개 제한
+
+// ── 테마 전환 ─────────────────────────────────
+const root = document.documentElement;
+const savedTheme = localStorage.getItem('pagecraft-theme') || 'dark';
+if (savedTheme === 'light') applyLight();
+
+function toggleTheme() {
+  if (root.classList.contains('light')) {
+    root.classList.remove('light');
+    document.getElementById('themeLabel').textContent = '🌙 다크';
+    localStorage.setItem('pagecraft-theme', 'dark');
+  } else {
+    applyLight();
+    localStorage.setItem('pagecraft-theme', 'light');
+  }
+}
+
+function applyLight() {
+  root.classList.add('light');
+  const label = document.getElementById('themeLabel');
+  if (label) label.textContent = '☀️ 라이트';
+}
+
+// ── [해결책 1] 이미지 리사이징/압축 유틸 함수 ────────────────
+function compressImage(file, maxWidth = 800) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let w = img.width, h = img.height;
+        if (w > maxWidth || h > maxWidth) {
+          if (w > h) { h = Math.round(h * maxWidth / w); w = maxWidth; }
+          else { w = Math.round(w * maxWidth / h); h = maxWidth; }
+        }
+        canvas.width = w; canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, w, h);
+        
+        // 투명 배경 유지를 위해 PNG는 가급적 PNG로 반환, 그 외는 JPEG 80% 압축
+        const mimeType = file.type === 'image/png' ? 'image/png' : 'image/jpeg';
+        resolve(canvas.toDataURL(mimeType, 0.8));
+      };
+      img.onerror = reject;
+      img.src = e.target.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+// ── 배경 제거 (브라우저 내 ONNX) ────────────────
+function toggleBgRemove() {
+  const toggle = document.getElementById('bgToggle');
+  bgRemoveEnabled = !bgRemoveEnabled;
+  toggle.classList.toggle('on', bgRemoveEnabled);
+
+  if (bgRemoveEnabled && !bgRemoveModel && !bgRemoveModelLoading) {
+    loadBgRemoveModel();
+  }
+
+  // 이미 업로드된 이미지가 있으면 선택된 것만 배경 제거 처리
+  if (bgRemoveEnabled && imgs.length > 0) {
+    const hasSelected = imgs.some(im => im.bgSelected);
+    if (hasSelected) {
+      processSelectedBgRemoval();
+    } else {
+      processAllBgRemoval();
+    }
+  } else if (!bgRemoveEnabled && imgs.length > 0) {
+    // 토글 해제 시 원본으로 복원
+    imgs.forEach(im => { if (im.original) im.data = im.original; im.bgProcessed = false; });
+    renderThumbs();
+  }
+}
+
+async function loadBgRemoveModel() {
+  bgRemoveModelLoading = true;
+  const statusEl = document.getElementById('bgStatus');
+  const statusText = document.getElementById('bgStatusText');
+  const progressBar = document.getElementById('bgProgressBar');
+
+  statusEl.classList.add('show');
+  statusText.textContent = 'AI 배경 제거 모델 로딩 중...';
+  progressBar.style.width = '10%';
+
+  try {
+    // @imgly/background-removal (브라우저 전용, ONNX 기반)
+    // CDN에서 ESM 로드
+    progressBar.style.width = '30%';
+    statusText.textContent = '모델 다운로드 중 (최초 1회)...';
+
+    const module = await import('https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.5.5/+esm');
+    bgRemoveModel = module;
+
+    progressBar.style.width = '100%';
+    statusText.textContent = '✅ 배경 제거 준비 완료';
+    setTimeout(() => statusEl.classList.remove('show'), 2000);
+  } catch (e) {
+    console.error('배경 제거 모델 로드 실패:', e);
+    statusText.textContent = '⚠️ 모델 로드 실패 - 원본 이미지 사용';
+    progressBar.style.width = '0%';
+    setTimeout(() => statusEl.classList.remove('show'), 3000);
+    bgRemoveEnabled = false;
+    document.getElementById('bgToggle').classList.remove('on');
+  }
+  bgRemoveModelLoading = false;
+}
+
+async function removeBgFromDataUrl(dataUrl) {
+  if (!bgRemoveModel) return dataUrl;
+  try {
+    // dataUrl → Blob → 배경 제거 → dataUrl
+    const resp = await fetch(dataUrl);
+    const blob = await resp.blob();
+    const resultBlob = await bgRemoveModel.removeBackground(blob, {
+      output: { format: 'image/png', quality: 0.9 }
+    });
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.readAsDataURL(resultBlob);
+    });
+  } catch (e) {
+    console.error('배경 제거 실패:', e);
+    return dataUrl; // 실패 시 원본 반환
+  }
+}
+
+async function processAllBgRemoval() {
+  if (!bgRemoveEnabled) return;
+
+  // 모델이 아직 로딩 중이면 기다림
+  if (bgRemoveModelLoading) {
+    const waitForModel = () => new Promise(resolve => {
+      const check = setInterval(() => {
+        if (!bgRemoveModelLoading) { clearInterval(check); resolve(); }
+      }, 300);
+    });
+    await waitForModel();
+  }
+  if (!bgRemoveModel) return;
+
+  for (let i = 0; i < imgs.length; i++) {
+    const im = imgs[i];
+    if (im.bgProcessed) continue; // 이미 처리된 것 스킵
+
+    // 원본 저장
+    if (!im.original) im.original = im.data;
+
+    // 처리 중 표시
+    renderThumbs();
+    const thumbEl = document.getElementById('thumbGrid').children[i];
+    if (thumbEl) {
+      const overlay = document.createElement('div');
+      overlay.className = 'thumb-processing';
+      overlay.innerHTML = '<div class="mini-spinner"></div>';
+      thumbEl.appendChild(overlay);
+    }
+
+    // 배경 제거 실행
+    const result = await removeBgFromDataUrl(im.original);
+    im.data = result;
+    im.bgProcessed = true;
+
+    renderThumbs();
+  }
+}
+
+// ── 선택된 이미지만 배경 제거 ──
+async function processSelectedBgRemoval() {
+  if (!bgRemoveEnabled) return;
+  if (bgRemoveModelLoading) {
+    await new Promise(resolve => {
+      const check = setInterval(() => { if (!bgRemoveModelLoading) { clearInterval(check); resolve(); } }, 300);
+    });
+  }
+  if (!bgRemoveModel) return;
+
+  for (let i = 0; i < imgs.length; i++) {
+    const im = imgs[i];
+    if (!im.bgSelected) continue; // 선택 안 된 이미지 스킵
+    if (im.bgProcessed) continue;
+
+    if (!im.original) im.original = im.data;
+    renderThumbs();
+    const thumbEl = document.getElementById('thumbGrid').children[i];
+    if (thumbEl) {
+      const overlay = document.createElement('div');
+      overlay.className = 'thumb-processing';
+      overlay.innerHTML = '<div class="mini-spinner"></div>';
+      thumbEl.appendChild(overlay);
+    }
+
+    const result = await removeBgFromDataUrl(im.original);
+    im.data = result;
+    im.bgProcessed = true;
+    renderThumbs();
+  }
+}
+
+// ── 업로드 ────────────────────────────────────
+document.getElementById('fi').onchange = e => handleFiles(e.target.files);
+
+// ── 스토어 소개 / 약관 단일 업로드 ──
+let storeIntroImgData = null;
+let termsImgData = null;
+function setupSingleUpload(dzId, fiId, thumbId, kind) {
+  const dzEl = document.getElementById(dzId);
+  const fiEl = document.getElementById(fiId);
+  dzEl.onclick = () => fiEl.click();
+  dzEl.ondragover = e => { e.preventDefault(); dzEl.classList.add('drag'); };
+  dzEl.ondragleave = () => dzEl.classList.remove('drag');
+  dzEl.ondrop = e => { e.preventDefault(); dzEl.classList.remove('drag'); if (e.dataTransfer.files[0]) handleSingleFile(e.dataTransfer.files[0], thumbId, kind); };
+  fiEl.onchange = e => { if (e.target.files[0]) handleSingleFile(e.target.files[0], thumbId, kind); };
+}
+async function handleSingleFile(file, thumbId, kind) {
+  if (!file.type.startsWith('image/')) return;
+  try {
+    const dataUrl = await compressImage(file, 1200);
+    if (kind === 'store') storeIntroImgData = dataUrl;
+    else if (kind === 'terms') termsImgData = dataUrl;
+    document.getElementById(thumbId).innerHTML =
+      `<div class="sth-wrap"><img src="${dataUrl}"><button class="sth-del" onclick="clearSingle('${thumbId}','${kind}')">✕</button></div>`;
+  } catch(e) { console.error('single upload error:', e); }
+}
+function clearSingle(thumbId, kind) {
+  document.getElementById(thumbId).innerHTML = '';
+  if (kind === 'store') storeIntroImgData = null;
+  else if (kind === 'terms') termsImgData = null;
+}
+setupSingleUpload('dzStore', 'fiStore', 'storeThumb', 'store');
+setupSingleUpload('dzTerms', 'fiTerms', 'termsThumb', 'terms');
+const dz = document.getElementById('dz');
+dz.onclick = () => document.getElementById('fi').click();
+dz.ondragover = e => { e.preventDefault(); dz.classList.add('drag'); };
+dz.ondragleave = () => dz.classList.remove('drag');
+dz.ondrop = e => { e.preventDefault(); dz.classList.remove('drag'); handleFiles(e.dataTransfer.files); };
+
+// ── [해결책 2] handleFiles 비동기 압축 로직 적용 ────────────────
+async function handleFiles(files) {
+  const filesToProcess = [...files].slice(0, 10 - imgs.length);
+  
+  for (const f of filesToProcess) {
+    if (!f.type.startsWith('image/')) continue;
+    
+    try {
+      // 업로드 단계에서 이미지를 먼저 800px 이하로 압축
+      const compressedDataUrl = await compressImage(f, 800);
+      
+      const imgObj = { 
+        name: f.name, 
+        data: compressedDataUrl, 
+        original: compressedDataUrl, // 압축된 버전을 original로 삼음
+        bgProcessed: false 
+      };
+      
+      imgs.push(imgObj);
+      renderThumbs();
+
+      // 배경 제거 활성화 시 자동 처리
+      if (bgRemoveEnabled) {
+        const idx = imgs.length - 1;
+        const thumbEl = document.getElementById('thumbGrid').children[idx];
+        if (thumbEl) {
+          const overlay = document.createElement('div');
+          overlay.className = 'thumb-processing';
+          overlay.innerHTML = '<div class="mini-spinner"></div>';
+          thumbEl.appendChild(overlay);
+        }
+
+        // 모델 로딩 대기
+        if (bgRemoveModelLoading) {
+          await new Promise(resolve => {
+            const check = setInterval(() => {
+              if (!bgRemoveModelLoading) { clearInterval(check); resolve(); }
+            }, 300);
+          });
+        }
+
+        if (bgRemoveModel) {
+          const result = await removeBgFromDataUrl(imgObj.original);
+          imgObj.data = result;
+          imgObj.bgProcessed = true;
+          renderThumbs();
+        }
+      }
+    } catch (e) {
+      console.error("이미지 압축 중 오류 발생:", e);
+    }
+  }
+}
+
+function renderThumbs() {
+  document.getElementById('thumbGrid').innerHTML = imgs.map((im,i) =>
+    `<div class="thumb" style="position:relative" draggable="true"
+          ondragstart="onDragStart(event,${i})" ondragover="onDragOver(event)" ondragenter="onDragEnter(event)"
+          ondragleave="onDragLeave(event)" ondrop="onDrop(event,${i})" ondragend="onDragEnd(event)">
+      <img src="${im.data}">
+      ${im.bgProcessed ? '<div class="thumb-done">✓</div>' : ''}
+      <div class="thumb-checkbox ${im.bgSelected ? 'checked' : ''}" onclick="event.stopPropagation();toggleBgSelect(${i})">✓</div>
+      <button class="thumb-del" onclick="rmImg(${i})">✕</button>
+    </div>`
+  ).join('');
+  document.getElementById('statusImgs').textContent = `사진 ${imgs.length}장`;
+}
+function rmImg(i) { imgs.splice(i,1); renderThumbs(); }
+
+// ── 이미지 드래그 순서 변경 ──
+let dragIdx = null;
+function onDragStart(e, i) { dragIdx = i; e.currentTarget.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; }
+function onDragOver(e) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; }
+function onDragEnter(e) { e.preventDefault(); e.currentTarget.classList.add('drag-over'); }
+function onDragLeave(e) { e.currentTarget.classList.remove('drag-over'); }
+function onDragEnd(e) { e.currentTarget.classList.remove('dragging'); document.querySelectorAll('.thumb').forEach(t => t.classList.remove('drag-over')); }
+function onDrop(e, targetIdx) {
+  e.preventDefault(); e.currentTarget.classList.remove('drag-over');
+  if (dragIdx === null || dragIdx === targetIdx) return;
+  const [moved] = imgs.splice(dragIdx, 1);
+  imgs.splice(targetIdx, 0, moved);
+  dragIdx = null;
+  renderThumbs();
+  toast('📷 이미지 순서가 변경되었습니다');
+}
+
+// ── 선택 이미지 배경 제거 ──
+function toggleBgSelect(i) {
+  imgs[i].bgSelected = !imgs[i].bgSelected;
+  renderThumbs();
+}
+
+// ── AI 모델 이미지 생성 토글 ──
+function toggleAiModel() {
+  aiModelEnabled = !aiModelEnabled;
+  document.getElementById('aiModelToggle').classList.toggle('on', aiModelEnabled);
+  document.getElementById('aiModelGenderRow').classList.toggle('show', aiModelEnabled);
+  if (aiModelEnabled) updateAiModelCount();
+}
+function setGender(btn) {
+  document.querySelectorAll('.gender-opt').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  aiModelGender = btn.dataset.gender;
+}
+function updateAiModelCount() {
+  const el = document.getElementById('aiModelCount');
+  if (el) el.textContent = aiModelGeneratedThisSession ? '이번 생성에 사용됨' : '생성 가능';
+}
+
+// ── 칩 ───────────────────────────────────────
+document.querySelectorAll('#chips .chip').forEach(c => {
+  c.onclick = () => {
+    c.classList.toggle('on');
+    const v = c.dataset.v;
+    selF = c.classList.contains('on') ? [...selF,v] : selF.filter(x=>x!==v);
+  };
+});
+
+// ── 플랫폼 상태 ───────────────────────────────
+document.getElementById('pf').onchange = function() {
+  document.getElementById('statusPf').textContent = '플랫폼: ' + this.value;
+};
+
+// ── 탭 ───────────────────────────────────────
+const panelMap = {
+  copy:   'panelCopy',
+  title:  'panelTitle',
+  tags:   'panelTags',
+  export: 'panelExport',
+};
+document.querySelectorAll('.ptab').forEach(t => {
+  t.onclick = () => {
+    document.querySelectorAll('.ptab').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    Object.values(panelMap).forEach(id => {
+      const el = document.getElementById(id);
+      if(el) el.style.display = 'none';
+    });
+    const target = panelMap[t.dataset.tab];
+    if(target) document.getElementById(target).style.display = 'block';
+  };
+});
+
+// ── 로딩 메시지 ───────────────────────────────
+const loadSteps = [
+  ['이미지 분석 중...','AI가 상품을 파악하고 있습니다'],
+  ['카피라이팅 작성 중...','구매욕구를 자극하는 문구 생성 중'],
+  ['스펙 표 구성 중...','상품 정보를 정리하는 중'],
+  ['상세페이지 렌더링...','이미지로 변환하는 중'],
+  ['마무리 중...','거의 다 됐어요!'],
+];
+
+// ── 1. 상세페이지 생성 ─────────────────────────────────────
+document.getElementById('genBtn').onclick = async function() {
+  if (!requireSession()) return;
+  const brand = document.getElementById('brand').value.trim();
+  const pname = document.getElementById('pname').value.trim();
+  const price = document.getElementById('price').value.trim();
+  const cat   = document.getElementById('cat').value;
+  const pf    = document.getElementById('pf').value;
+  const memo  = document.getElementById('memo').value.trim();
+  const feats = selF.length ? selF.join(', ') : '없음';
+
+  const btn = this;
+  btn.disabled = true;
+  btn.classList.add('loading');
+
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('resultPreview').classList.remove('show');
+  document.getElementById('errBox').classList.remove('show');
+  document.getElementById('loadingState').classList.add('show');
+
+  let si = 0;
+  const timer = setInterval(() => {
+    const s = loadSteps[si++ % loadSteps.length];
+    document.getElementById('loadMsg').textContent = s[0];
+    document.getElementById('loadSub').textContent = s[1];
+  }, 1600);
+
+  const imgParts = imgs.slice(0,3).map(im => ({
+    inlineData: {
+      mimeType: im.data.split(';')[0].split(':')[1],
+      data: im.data.split(',')[1]
+    }
+  }));
+
+  const sys = `당신은 한국 쇼핑몰 상품 상세페이지 전문 카피라이터입니다. 
+[절대 규칙]
+1. 반드시 순수한 JSON 객체 하나만 출력하세요.
+2. \`\`\`json 이나 \`\`\` 같은 마크다운 기호를 절대 사용하지 마세요.
+3. 인사말, 설명 등 JSON 외의 텍스트는 출력하지 마세요.
+4. 모든 키와 값은 큰따옴표(")로 묶고, 값 안의 줄바꿈은 '\\n'으로 처리하세요.`;
+
+  const usr = `상품 이미지를 분석하여 JSON 생성:
+브랜드:${brand||'이미지에서판단'}, 상품명:${pname||'이미지에서판단'}, 가격:${price||'미입력'}, 카테고리:${cat}, 특징:${feats}, 플랫폼:${pf}, 메모:${memo||'없음'}
+
+{"product_name":"상품명(40자이내)","subtitle":"서브타이틀(20자이내)","main_copy":"메인카피1~2줄","selling_points":["포인트1","포인트2","포인트3"],"description":"상세설명2문단(\\n구분)","specs":[{"key":"브랜드","value":"..."},{"key":"소재","value":"..."},{"key":"사이즈","value":"..."},{"key":"색상","value":"..."},{"key":"원산지","value":"..."},{"key":"세탁방법","value":"..."},{"key":"추천계절","value":"..."}],"keywords":["키워드1","키워드2","키워드3","키워드4","키워드5"],"caution":"주의사항2~3가지"}`;
+
+  try {
+    const resp = await fetch('/api/generate', {
+      method:'POST', headers:apiHeaders(),
+      body: JSON.stringify({
+        model: 'gemini-2.5-flash',
+        systemInstruction: { parts: [{ text: sys }] },
+        contents: [{ role: 'user', parts: [...imgParts, { text: usr }] }],
+        generationConfig: { responseMimeType: "application/json", maxOutputTokens: 2500 }
+      })
+    });
+
+    clearInterval(timer);
+
+    // ── [해결책 3] API 413 에러 방어 로직 (JSON 파싱 에러 사전 차단) ────────────────
+    if (!resp.ok) {
+      if (resp.status === 413) {
+        throw new Error("이미지 용량이 너무 커서 서버(Vercel) 제한을 초과했습니다. 새로고침 후 다시 시도해주세요.");
+      }
+      
+      const text = await resp.text();
+      try {
+        const e = JSON.parse(text);
+        throw new Error(e.error?.message || e.message || `서버 에러 (${resp.status})`);
+      } catch (parseErr) {
+        throw new Error(`올바르지 않은 서버 응답(${resp.status}): ${text.slice(0, 200)}`);
+      }
+    }
+
+    const data = await resp.json();
+    const raw = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    
+    // 강력한 파싱 로직
+    let parsed;
+    try {
+      let clean = raw.replace(/```json/gi, '').replace(/```/g, '').trim();
+      parsed = JSON.parse(clean);
+    } catch (e) {
+      const match = raw.match(/\{[\s\S]*\}/);
+      if (match) {
+        parsed = JSON.parse(match[0].replace(/[\u0000-\u001F\u007F-\u009F]/g, ""));
+      } else {
+        throw new Error('JSON 구조를 찾을 수 없습니다.');
+      }
+    }
+
+    resultData = parsed;
+
+    // 왼쪽 입력란의 상품명이 있으면 그대로 제목에 사용
+    if (pname) parsed.product_name = pname;
+
+    // ── AI 모델 이미지 생성 (스위치 ON + 아직 미생성 시) ──
+    if (aiModelEnabled && !aiModelGeneratedThisSession) {
+      document.getElementById('loadMsg').textContent = 'AI 모델 이미지 생성 중...';
+      document.getElementById('loadSub').textContent = `${aiModelGender === 'male' ? '남성' : '여성'} 모델이 상품을 착용한 이미지를 생성합니다`;
+      try {
+        const modelResp = await fetch('/api/generate-model', {
+          method: 'POST', headers: apiHeaders(),
+          body: JSON.stringify({
+            productName: parsed.product_name || pname,
+            category: cat,
+            gender: aiModelGender,
+            productImageBase64: imgs.length > 0 ? imgs[0].data : null
+          })
+        });
+        if (modelResp.ok) {
+          const modelData = await modelResp.json();
+          if (modelData.image) {
+            imgs.push({ name: 'ai-model.png', data: modelData.image, original: modelData.image, bgProcessed: false });
+            renderThumbs();
+            aiModelGeneratedThisSession = true;
+            updateAiModelCount();
+            toast(`✅ AI 모델 이미지 생성 완료! (남은 횟수: ${modelData.remaining})`);
+          }
+        } else {
+          const errData = await modelResp.json().catch(() => ({}));
+          console.warn('AI 모델 이미지 생성 실패:', errData.error || modelResp.status);
+          toast(`⚠️ 모델 이미지 생성 실패: ${errData.error || '알 수 없는 오류'}`);
+        }
+      } catch (modelErr) {
+        console.warn('AI 모델 이미지 생성 에러:', modelErr);
+      }
+    }
+
+    document.getElementById('loadMsg').textContent = '이미지 렌더링 중...';
+    document.getElementById('loadSub').textContent = '상세페이지를 이미지로 변환 중';
+
+    const renderResp = await fetch('/api/render', {
+      method:'POST', headers:apiHeaders(),
+      body: JSON.stringify({
+        data: parsed,
+        price: price,
+        images: imgs.slice(0,10).map(im=>im.data),
+        storeIntroImage: storeIntroImgData,
+        termsImage: termsImgData
+      })
+    });
+
+    document.getElementById('loadingState').classList.remove('show');
+
+    if (renderResp.ok) {
+      const blob = await renderResp.blob();
+      generatedImgDataUrl = URL.createObjectURL(blob);
+      document.getElementById('previewImg').src = generatedImgDataUrl;
+      document.getElementById('resultPreview').classList.add('show');
+    } else {
+      showTextResult(parsed, price);
+    }
+
+    renderPanel(parsed);
+    document.getElementById('copyAllBtn').style.display = 'flex';
+    document.getElementById('dlBtn').style.display = 'flex';
+    toast('✅ 상세페이지 생성 완료!');
+
+  } catch(e) {
+    clearInterval(timer);
+    document.getElementById('loadingState').classList.remove('show');
+    document.getElementById('emptyState').style.display = 'flex';
+    const eb = document.getElementById('errBox');
+    eb.innerHTML = `❌ <strong>오류 발생</strong><br><span style="font-size:11px;opacity:0.8;word-break:break-word;display:block;margin-top:4px">${e.message}</span>`;
+    eb.classList.add('show');
+  }
+
+  btn.disabled = false;
+  btn.classList.remove('loading');
+};
+
+function showTextResult(d, priceInput) {
+  const priceNum = priceInput ? parseInt(priceInput.replace(/[^0-9]/g,''),10) : null;
+  const priceHtml = priceNum ? `<div style="font-size:20px;font-weight:700;color:#e8c97a;margin-top:8px">${priceNum.toLocaleString()}원</div>` : '';
+  const specs = (d.specs||[]).map(s=>`<tr><td style="padding:8px;color:#888;font-size:12px;font-weight:600;border-bottom:1px solid #222">${s.key}</td><td style="padding:8px;color:#ccc;font-size:12px;border-bottom:1px solid #222">${s.value}</td></tr>`).join('');
+  const kws = (d.keywords||[]).map(k=>`<span style="display:inline-block;padding:4px 10px;border:1px solid #333;border-radius:20px;font-size:11px;color:#888;margin:3px">#${k}</span>`).join('');
+  const divImg = (idx) => imgs[idx] ? `<img src="${imgs[idx].data}" style="width:100%;display:block;margin:0">` : '';
+  const paras = (d.description||'').split('\n').filter(Boolean);
+  const para1 = paras.length > 0 ? paras[0] : '';
+  const para2 = paras.length > 1 ? paras.slice(1).join('<br>') : '';
+
+  document.getElementById('resultPreview').innerHTML = `
+  <div style="background:#13131a;font-family:'Noto Sans KR',sans-serif;color:#f0ede8">
+    <div style="padding:24px">
+      <div style="font-size:10px;letter-spacing:2px;color:#e8c97a;margin-bottom:8px">상품명</div>
+      <div style="font-size:18px;font-weight:700;margin-bottom:4px">${d.product_name||''}</div>
+      <div style="font-size:13px;color:#9998a8;margin-bottom:4px">${d.subtitle||''}</div>
+      ${priceHtml}
+    </div>
+    ${imgs[0] ? `<img src="${imgs[0].data}" style="width:100%;display:block">` : ''}
+    <div style="padding:24px">
+      <div style="font-size:10px;letter-spacing:2px;color:#e8c97a;margin-bottom:8px">메인 카피</div>
+      <div style="font-size:15px;font-weight:600;line-height:1.6">${(d.main_copy||'').replace(/\n/g,'<br>')}</div>
+    </div>
+    ${divImg(3)}
+    ${divImg(7)}
+    <div style="padding:24px">
+      <div style="font-size:10px;letter-spacing:2px;color:#e8c97a;margin-bottom:10px">판매 포인트</div>
+      ${(d.selling_points||[]).map(p=>`<div style="display:flex;gap:8px;margin-bottom:8px;font-size:13px;color:#ccc"><span style="color:#3ecf8e">✓</span>${p}</div>`).join('')}
+    </div>
+    ${divImg(4)}
+    ${divImg(8)}
+    ${para1 ? `<div style="padding:24px"><div style="font-size:10px;letter-spacing:2px;color:#e8c97a;margin-bottom:8px">상세 설명</div><div style="font-size:13px;color:#ccc;line-height:1.7">${para1}</div></div>` : ''}
+    ${divImg(5)}
+    ${para2 ? `<div style="padding:24px"><div style="font-size:10px;letter-spacing:2px;color:#e8c97a;margin-bottom:8px">상세 설명</div><div style="font-size:13px;color:#ccc;line-height:1.7">${para2}</div></div>` : ''}
+    ${divImg(6)}
+    ${divImg(9)}
+    ${(imgs[1]||imgs[2]) ? `<div style="display:flex;gap:0">${imgs[2]?`<img src="${imgs[2].data}" style="width:50%;display:block">`:'<div style="width:50%"></div>'}${imgs[1]?`<img src="${imgs[1].data}" style="width:50%;display:block">`:'<div style="width:50%"></div>'}</div>` : ''}
+    <div style="padding:24px">
+      <div style="font-size:10px;letter-spacing:2px;color:#e8c97a;margin-bottom:8px">스펙 표</div>
+      <table style="width:100%;border-collapse:collapse">${specs}</table>
+      <div style="height:1px;background:#222;margin:16px 0"></div>
+      <div style="font-size:10px;letter-spacing:2px;color:#e8c97a;margin-bottom:8px">검색 키워드</div>
+      <div>${kws}</div>
+    </div>
+  </div>`;
+  document.getElementById('resultPreview').classList.add('show');
+}
+
+function renderPanel(d) {
+  const blocks = [
+    {title:'상품명', body:`${d.product_name}\n${d.subtitle}`},
+    {title:'메인 카피', body:d.main_copy},
+    {title:'판매 포인트', body:(d.selling_points||[]).map((p,i)=>`${i+1}. ${p}`).join('\n')},
+    {title:'상세 설명', body:d.description},
+    {title:'스펙 표', body:(d.specs||[]).map(s=>`${s.key}: ${s.value}`).join('\n')},
+    {title:'검색 키워드', body:(d.keywords||[]).join(', ')},
+    {title:'주의사항', body:d.caution},
+  ];
+  document.getElementById('panelCopy').innerHTML = blocks.map(b=>`
+    <div class="copy-block">
+      <div class="copy-block-hdr">
+        <span class="copy-block-title">${b.title}</span>
+        <button class="copy-btn" onclick="cp(this,'${esc(b.body)}')">📋 복사</button>
+      </div>
+      <div class="copy-block-body">${(b.body||'').replace(/\n/g,'<br>')}</div>
+    </div>`).join('');
+}
+
+function esc(s){ return (s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/\n/g,'\\n'); }
+function cp(btn, text) {
+  navigator.clipboard.writeText(text.replace(/\\n/g,'\n'));
+  btn.textContent='✓ 복사됨'; btn.classList.add('ok');
+  setTimeout(()=>{ btn.textContent='📋 복사'; btn.classList.remove('ok'); },1500);
+}
+function copyAll() {
+  if (!resultData) return;
+  const d = resultData;
+  const t = `[상품명]\n${d.product_name}\n\n[서브타이틀]\n${d.subtitle}\n\n[메인카피]\n${d.main_copy}\n\n[판매포인트]\n${(d.selling_points||[]).join('\n')}\n\n[상세설명]\n${d.description}\n\n[스펙]\n${(d.specs||[]).map(s=>s.key+': '+s.value).join('\n')}\n\n[키워드]\n${(d.keywords||[]).join(', ')}\n\n[주의사항]\n${d.caution}`;
+  navigator.clipboard.writeText(t);
+  toast('📋 전체 내용이 복사되었습니다!');
+}
+function downloadImg() {
+  if (generatedImgDataUrl) {
+    const a = document.createElement('a');
+    a.href = generatedImgDataUrl;
+    a.download = `${(resultData?.product_name||'상세페이지').replace(/\s/g,'_')}.png`;
+    a.click();
+    toast('⬇ 이미지가 저장되었습니다!');
+  } else {
+    toast('⚠ 먼저 상세페이지를 생성해주세요');
+  }
+}
+
+// ── 공용: 쿠팡 자동완성 수집 헬퍼 ──────────────
+async function fetchCoupangSuggest(seeds) {
+  const q = [...new Set(seeds.filter(Boolean))].slice(0,4).join(',');
+  if (!q) return { suggestions: [], bySeed: [] };
+  try {
+    const r = await fetch('/api/coupang-suggest?keyword=' + encodeURIComponent(q));
+    if (!r.ok) return { suggestions: [], bySeed: [] };
+    const j = await r.json();
+    return { suggestions: j.suggestions || [], bySeed: j.bySeed || [] };
+  } catch(e) { console.warn('쿠팡 자동완성 실패:', e); return { suggestions: [], bySeed: [] }; }
+}
+
+// ── 2. 상품명 최적화 생성 ───────────────────────
+async function runTitleGen() {
+  if (!requireSession()) return;
+  const brand = document.getElementById('brand').value.trim();
+  const pname = document.getElementById('pname').value.trim();
+  const cat   = document.getElementById('cat').value;
+  const pf    = document.getElementById('pf').value;
+  const feats = selF.length ? selF.join(', ') : '';
+  const memo  = document.getElementById('memo').value.trim();
+
+  if (!resultData && !brand && !pname) {
+    document.getElementById('titleResult').innerHTML =
+      '<div class="tool-empty">먼저 상세페이지를 생성하거나<br>브랜드명/상품명을 입력해주세요.</div>';
+    return;
+  }
+
+  const btn = document.getElementById('titleBtn');
+  btn.disabled = true; btn.classList.add('loading');
+  document.getElementById('titleResult').innerHTML =
+    '<div class="tool-empty">AI가 최적화 상품명을 생성 중입니다...</div>';
+
+  const productInfo = resultData
+    ? `상품명: ${resultData.product_name}, 카테고리: ${cat}, 특징: ${(resultData.selling_points||[]).join(', ')}`
+    : `브랜드: ${brand}, 상품명: ${pname}, 카테고리: ${cat}, 특징: ${feats}, 메모: ${memo}`;
+
+  // ── 2-1. 쿠팡 자동완성 스크래핑으로 실제 인기 검색어 수집 ──
+  document.getElementById('titleResult').innerHTML =
+    '<div class="tool-empty">🔍 쿠팡 인기 검색어 수집 중...</div>';
+  const basePname = (resultData && resultData.product_name) || pname;
+  const { suggestions: coupangKeywords, bySeed: coupangBySeed } = await fetchCoupangSuggest([
+    basePname,
+    brand && basePname ? `${brand} ${basePname}` : '',
+    cat && basePname ? `${cat} ${basePname}` : '',
+    brand
+  ]);
+
+  document.getElementById('titleResult').innerHTML =
+    '<div class="tool-empty">AI가 쿠팡 최적화 상품명을 생성 중입니다...</div>';
+
+  const coupangRules = `
+[쿠팡 상품명 작성 규칙 — 반드시 준수]
+1) 길이: 공백 포함 50자 이내 (쿠팡 권장). 40~50자 사이가 이상적.
+2) 구조: [브랜드] [핵심키워드/카테고리] [속성1] [속성2] [용도/대상] [모델/수량]
+   예) "락앤락 밀폐용기 직사각 1.2L 전자레인지 김치통 1개입"
+3) 핵심키워드(대표 검색어)는 반드시 앞쪽 10자 이내에 배치.
+4) 금지 사항:
+   - 특수문자/이모지/기호: ★ ♥ ♡ ! ? ~ # @ % &
+   - 과장/최상급 표현: "최고", "최저가", "1위", "정품보장", "무조건", "100%"
+   - 동일 키워드 반복(2회 이상 금지), 동의어 나열 최소화
+   - 쉼표·슬래시 나열 금지 (공백으로만 구분)
+5) 반드시 포함 권장: 소재/색상/사이즈/수량/규격/용도/대상/호환기종 중 해당 항목
+6) 검색 매칭을 위해 "실제 쿠팡 자동완성 인기 검색어"를 자연스럽게 1~3개 조합할 것
+   (단, 관련 없는 키워드 남용은 어뷰징으로 금지)
+7) 각 상품명은 서로 다른 키워드 조합/전략을 사용해 중복되지 않게 작성.
+`;
+
+  const coupangKwBlock = coupangKeywords.length
+    ? `\n[쿠팡 자동완성 인기 검색어 (실제 스크래핑 결과)]\n- 통합 상위: ${coupangKeywords.slice(0,20).join(' / ')}\n${coupangBySeed.map(b=>`- "${b.seed}" 연관: ${(b.suggestions||[]).slice(0,8).join(', ')||'(없음)'}`).join('\n')}\n→ 위 검색어 중 상품과 실제로 관련 있는 것을 우선적으로 상품명에 녹여 넣으세요.`
+    : `\n[쿠팡 자동완성] 수집 실패 또는 결과 없음 → 일반 SEO 원칙으로 작성하세요.`;
+
+  const sys = `당신은 쿠팡 상품명 SEO 최적화 전문가입니다. 쿠팡 검색 알고리즘(상품명 매칭, 카테고리 매칭, 품질 점수)을 숙지하고 있습니다. 반드시 순수 JSON만 출력하세요. 마크다운/설명/코드펜스 금지.`;
+
+  const usr = `아래 상품의 쿠팡 검색 최적화 상품명 5가지를 생성해주세요.
+
+[상품 정보]
+${productInfo}
+플랫폼: ${pf}
+${coupangKwBlock}
+${coupangRules}
+
+[출력 형식 — 순수 JSON]
+{"titles":[
+  {"rank":1,"strategy":"핵심키워드 선점형","title":"...","used_keywords":["..."],"char_count":0},
+  {"rank":2,"strategy":"속성/스펙 강조형","title":"...","used_keywords":["..."],"char_count":0},
+  {"rank":3,"strategy":"타깃/용도 명확화형","title":"...","used_keywords":["..."],"char_count":0},
+  {"rank":4,"strategy":"브랜드 신뢰형","title":"...","used_keywords":["..."],"char_count":0},
+  {"rank":5,"strategy":"롱테일 조합형","title":"...","used_keywords":["..."],"char_count":0}
+]}
+- used_keywords 에는 해당 상품명에서 사용한 쿠팡 자동완성 키워드만 기재.
+- char_count 는 공백 포함 실제 글자수.
+- 모든 title 은 50자 이내.`;
+
+  try {
+    const resp = await fetch('/api/generate', {
+      method:'POST', headers:apiHeaders(),
+      body: JSON.stringify({
+        model: 'gemini-2.5-flash',
+        systemInstruction: { parts: [{ text: sys }] },
+        contents: [{ role: 'user', parts: [{ text: usr }] }],
+        generationConfig: { responseMimeType: "application/json", maxOutputTokens: 4096, temperature: 0.8, thinkingConfig: { thinkingBudget: 0 } }
+      })
+    });
+    
+    if (!resp.ok) throw new Error(`서버 오류 (${resp.status})`);
+    
+    const data = await resp.json();
+    const raw = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    const finishReason = data.candidates?.[0]?.finishReason || '';
+    if (!raw) {
+      console.error('빈 응답:', data);
+      throw new Error('AI 응답이 비어있습니다. (' + (finishReason||'unknown') + ')');
+    }
+    
+    // 파싱 강화 로직 (잘린 JSON 복구 지원)
+    let titles = [];
+    const cleanRaw = raw.replace(/```json/gi,'').replace(/```/g,'').replace(/[\u0000-\u001F\u007F-\u009F]/g,'').trim();
+    const tryParse = (txt) => { try { return JSON.parse(txt); } catch(_) { return null; } };
+    
+    // 1차: 그대로
+    let parsed = tryParse(cleanRaw);
+    
+    // 2차: 가장 바깥 {...}
+    if (!parsed) {
+      const s0 = cleanRaw.indexOf('{'), e0 = cleanRaw.lastIndexOf('}');
+      if (s0!==-1 && e0>s0) parsed = tryParse(cleanRaw.slice(s0,e0+1));
+    }
+    
+    // 3차: 중괄호 균형 커팅 (중간 잘림 대응)
+    if (!parsed) {
+      const s0 = cleanRaw.indexOf('{');
+      if (s0!==-1) {
+        let depth=0,inStr=false,esc=false,cut=-1;
+        for (let i=s0;i<cleanRaw.length;i++){
+          const c=cleanRaw[i];
+          if(esc){esc=false;continue;}
+          if(c==='\\'){esc=true;continue;}
+          if(c==='"'){inStr=!inStr;continue;}
+          if(inStr)continue;
+          if(c==='{')depth++;
+          else if(c==='}'){depth--;if(depth===0){cut=i;break;}}
+        }
+        if(cut>0) parsed = tryParse(cleanRaw.slice(s0,cut+1));
+      }
+    }
+    
+    if (parsed && Array.isArray(parsed.titles)) {
+      titles = parsed.titles;
+    } else {
+      // 4차: titles 배열이 중간에 잘렸을 때 — 객체 단위 긁어내기
+      const objRe = /\{\s*"rank"[\s\S]*?"title"\s*:\s*"(?:[^"\\]|\\.)*"[\s\S]*?\}/g;
+      const matches = cleanRaw.match(objRe) || [];
+      for (const m of matches) { const o = tryParse(m); if (o && o.title) titles.push(o); }
+      
+      // 5차: title 키만이라도 추출
+      if (titles.length === 0) {
+        const titleRe = /"title"\s*:\s*"((?:[^"\\]|\\.)*)"/g;
+        const stratRe = /"strategy"\s*:\s*"((?:[^"\\]|\\.)*)"/g;
+        const ts = [...cleanRaw.matchAll(titleRe)].map(m=>m[1].replace(/\\"/g,'"'));
+        const ss = [...cleanRaw.matchAll(stratRe)].map(m=>m[1]);
+        ts.forEach((t,i)=>titles.push({rank:i+1, strategy:ss[i]||'생성', title:t}));
+      }
+      
+      if (titles.length === 0) {
+        console.error('상품명 파싱 실패 — 원본:', raw);
+        throw new Error("상품명 파싱 실패. 잠시 후 다시 시도해주세요. (콘솔에서 원본 응답 확인 가능)");
+      }
+    }
+
+    document.getElementById('titleResult').innerHTML = titles.map(t => {
+      const len = (t.char_count!=null) ? t.char_count : (t.title||'').length;
+      const lenColor = len>50 ? 'var(--red)' : (len>=40 ? 'var(--accent)' : 'var(--text3)');
+      const usedKw = Array.isArray(t.used_keywords) && t.used_keywords.length
+        ? `<div style="font-size:11px;color:var(--text3);margin-top:4px">🔎 ${t.used_keywords.join(', ')}</div>` : '';
+      return `
+      <div class="title-card">
+        <div class="title-rank">${t.rank}. ${t.strategy} <span style="float:right;font-size:11px;color:${lenColor}">${len}자</span></div>
+        <div class="title-text">${t.title}</div>
+        ${usedKw}
+        <button class="title-copy" onclick="cp(this,'${(t.title||'').replace(/'/g,"\\'")}')">복사</button>
+      </div>`;
+    }).join('') + (coupangKeywords.length ? `<div style="margin-top:12px;padding:10px;background:var(--surface2);border-radius:8px;font-size:11px;color:var(--text3)">🔥 쿠팡 자동완성 수집: ${coupangKeywords.slice(0,15).join(' · ')}</div>` : '');
+
+    toast(coupangKeywords.length ? `✨ 쿠팡 인기검색어 ${coupangKeywords.length}개 반영 완료!` : '✨ 최적화 상품명 5개 생성 완료!');
+  } catch(e) {
+    document.getElementById('titleResult').innerHTML =
+      `<div class="tool-empty" style="color:var(--red)">오류: ${e.message}</div>`;
+  }
+  btn.disabled = false; btn.classList.remove('loading');
+}
+
+// ── 3. 쿠팡 태그 20개 생성 ──────────────────────
+async function runTagGen() {
+  if (!requireSession()) return;
+  const brand = document.getElementById('brand').value.trim();
+  const pname = document.getElementById('pname').value.trim();
+  const cat   = document.getElementById('cat').value;
+  const feats = selF.length ? selF.join(', ') : '';
+  const memo  = document.getElementById('memo').value.trim();
+
+  if (!resultData && !brand) {
+    document.getElementById('tagsResult').innerHTML =
+      '<div class="tool-empty">먼저 상세페이지를 생성하거나<br>브랜드명을 입력해주세요.</div>';
+    return;
+  }
+
+  const btn = document.getElementById('tagsBtn');
+  btn.disabled = true; btn.classList.add('loading');
+  document.getElementById('tagsResult').innerHTML =
+    '<div class="tool-empty">🔍 쿠팡 인기 검색어 수집 중...</div>';
+
+  // ── 3-1. 쿠팡 자동완성 수집 ──
+  const basePname = (resultData && resultData.product_name) || pname;
+  const { suggestions: coupangKeywords, bySeed: coupangBySeed } = await fetchCoupangSuggest([
+    basePname,
+    brand && basePname ? `${brand} ${basePname}` : '',
+    cat && basePname ? `${cat} ${basePname}` : '',
+    brand
+  ]);
+
+  document.getElementById('tagsResult').innerHTML =
+    '<div class="tool-empty">AI가 쿠팡 태그를 생성 중입니다...</div>';
+
+  const productInfo = resultData
+    ? `상품명: ${resultData.product_name}, 카테고리: ${cat}, 키워드: ${(resultData.keywords||[]).join(', ')}, 특징: ${(resultData.selling_points||[]).join(', ')}`
+    : `브랜드: ${brand}, 상품명: ${pname}, 카테고리: ${cat}, 특징: ${feats}, 메모: ${memo}`;
+
+  const coupangKwBlock = coupangKeywords.length
+    ? `\n[쿠팡 자동완성 실제 인기 검색어]\n- 통합 상위: ${coupangKeywords.slice(0,25).join(' / ')}\n${coupangBySeed.map(b=>`- "${b.seed}" 연관: ${(b.suggestions||[]).slice(0,8).join(', ')||'(없음)'}`).join('\n')}\n→ 아래 태그에 이 검색어들을 최우선으로 활용하세요.`
+    : `\n[쿠팡 자동완성] 수집 실패 → 일반 검색 키워드로 생성하세요.`;
+
+  const sys = `당신은 쿠팡 검색 SEO 전문가입니다. 반드시 순수 JSON만 출력하세요. 마크다운/설명/코드펜스 금지.`;
+  const usr = `아래 상품에 맞는 쿠팡 검색 태그 20개를 생성해주세요.
+
+[상품 정보]
+${productInfo}
+${coupangKwBlock}
+
+[쿠팡 태그 작성 규칙]
+1) 각 태그는 2~12자 이내, 한글 위주 (영문/숫자는 꼭 필요할 때만)
+2) 중복 금지, 의미 중복도 최소화
+3) 특수문자/이모지/쉼표/슬래시 금지 (태그 내부 공백 가능)
+4) 과장·최상급 표현 금지: "최고","1위","정품보장","무료배송","100%"
+5) 다양한 층위를 섞을 것: 카테고리어 / 브랜드·상품명 / 소재·색상·사이즈·수량 / 용도·상황 / 타깃 / 롱테일 조합
+6) 쿠팡 자동완성 결과가 있으면 그중 관련 있는 것을 8개 이상 반드시 포함할 것.
+7) 정확히 20개.
+
+[출력 형식 — 순수 JSON]
+{"tags":["태그1","태그2","태그3","태그4","태그5","태그6","태그7","태그8","태그9","태그10","태그11","태그12","태그13","태그14","태그15","태그16","태그17","태그18","태그19","태그20"]}`;
+
+  try {
+    const resp = await fetch('/api/generate', {
+      method:'POST', headers:apiHeaders(),
+      body: JSON.stringify({
+        model: 'gemini-2.5-flash',
+        systemInstruction: { parts: [{ text: sys }] },
+        contents: [{ role: 'user', parts: [{ text: usr }] }],
+        generationConfig: { responseMimeType: "application/json", maxOutputTokens: 2048, temperature: 0.7, thinkingConfig: { thinkingBudget: 0 } }
+      })
+    });
+
+    if (!resp.ok) throw new Error(`서버 오류 (${resp.status})`);
+    const data = await resp.json();
+    const raw = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    const finishReason = data.candidates?.[0]?.finishReason || '';
+    if (!raw) { console.error('빈 응답:', data); throw new Error('AI 응답이 비어있습니다. ('+(finishReason||'unknown')+')'); }
+
+    // 파싱 강화 (잘린 JSON 복구)
+    const cleanRaw = raw.replace(/```json/gi,'').replace(/```/g,'').replace(/[\u0000-\u001F\u007F-\u009F]/g,'').trim();
+    const tryParse = (t)=>{try{return JSON.parse(t);}catch(_){return null;}};
+    let parsed = tryParse(cleanRaw);
+    if (!parsed) {
+      const s0=cleanRaw.indexOf('{'), e0=cleanRaw.lastIndexOf('}');
+      if (s0!==-1 && e0>s0) parsed = tryParse(cleanRaw.slice(s0,e0+1));
+    }
+    let tags = (parsed && Array.isArray(parsed.tags)) ? parsed.tags : [];
+    if (tags.length === 0) {
+      const strRe = /"((?:[^"\\]|\\.){1,20})"/g;
+      tags = [...cleanRaw.matchAll(strRe)].map(m=>m[1]).filter(s=>s && s!=='tags' && !/^\s*$/.test(s));
+    }
+    // 쿠팡 키워드로 보강
+    if (tags.length < 20 && coupangKeywords.length) {
+      const existing = new Set(tags.map(t=>t.replace(/\s/g,'').toLowerCase()));
+      for (const kw of coupangKeywords) {
+        if (tags.length >= 20) break;
+        const k = kw.replace(/\s/g,'').toLowerCase();
+        if (!existing.has(k) && kw.length <= 12) { tags.push(kw); existing.add(k); }
+      }
+    }
+    tags = tags.slice(0,20);
+    if (tags.length === 0) { console.error('태그 파싱 실패 — 원본:', raw); throw new Error('태그 파싱 실패. 다시 시도해주세요.'); }
+
+    const kwSet = new Set(coupangKeywords.map(k=>k.replace(/\s/g,'').toLowerCase()));
+    const tagCloud = tags.map(tag => {
+      const isCoupang = kwSet.has(tag.replace(/\s/g,'').toLowerCase());
+      const extra = isCoupang ? ' style="border-color:var(--accent);color:var(--accent)" title="쿠팡 자동완성 출처"' : '';
+      return `<button class="tag-item"${extra} onclick="cpTag(this,'${tag.replace(/'/g,"\\'")}')">${tag}${isCoupang?' ★':''}</button>`;
+    }).join('');
+
+    document.getElementById('tagsResult').innerHTML = `
+      <div style="font-size:10px;color:var(--text3);margin-bottom:8px;letter-spacing:1px">
+        태그 클릭 시 개별 복사 · ★표시는 쿠팡 자동완성 출처
+      </div>
+      <div class="tag-cloud">${tagCloud}</div>
+      <button class="tag-copy-all" id="tagCopyAllBtn" onclick='cpAllTags(${JSON.stringify(tags).replace(/'/g,"&#39;")})'>
+        📋 태그 ${tags.length}개 전체 복사
+      </button>
+      ${coupangKeywords.length ? `<div style="margin-top:10px;padding:8px;background:var(--surface2);border-radius:8px;font-size:11px;color:var(--text3)">🔥 쿠팡 수집: ${coupangKeywords.slice(0,15).join(' · ')}</div>` : ''}`;
+
+    toast(coupangKeywords.length ? `🏷 쿠팡 인기태그 ${tags.length}개 생성!` : `🏷 태그 ${tags.length}개 생성 완료!`);
+  } catch(e) {
+    document.getElementById('tagsResult').innerHTML =
+      `<div class="tool-empty" style="color:var(--red)">오류: ${e.message}</div>`;
+  }
+  btn.disabled = false; btn.classList.remove('loading');
+}
+
+function cpTag(btn, tag) {
+  navigator.clipboard.writeText(tag);
+  const orig = btn.textContent.trim();
+  btn.textContent = '✓';
+  btn.style.borderColor = 'var(--green)';
+  btn.style.color = 'var(--green)';
+  setTimeout(() => {
+    btn.textContent = orig;
+    btn.style.borderColor = '';
+    btn.style.color = '';
+  }, 1200);
+}
+
+function cpAllTags(tags) {
+  navigator.clipboard.writeText(tags.join(', '));
+  const btn = document.getElementById('tagCopyAllBtn');
+  btn.textContent = '✓ 복사됨!';
+  btn.classList.add('ok');
+  setTimeout(() => {
+    btn.textContent = '📋 태그 20개 전체 복사';
+    btn.classList.remove('ok');
+  }, 1500);
+  toast('🏷 태그 20개가 복사되었습니다!');
+}
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2500);
+}
+</script>
+</body>
+</html>
