@@ -208,7 +208,8 @@ export default async function handler(req, res) {
     // 구분 이미지 높이 계산 (각각 존재하면 추가)
     const divH = (idx) => hasImg(idx) ? DIVIDER_PHOTO_H : 0;
 
-    const descStr = Array.isArray(d.description) ? d.description.join('\n') : String(d.description||'');
+    const descRaw = Array.isArray(d.description) ? d.description.join('\n') : String(d.description||'');
+    const descStr = descRaw.replace(/\\n/g, '\n');
     const allDescLines = descStr.split('\n').filter(Boolean);
     const para1 = allDescLines.length > 0 ? allDescLines[0] : '';
     const dividerImgIndices = [4, 5, 6, 7, 8, 9];
@@ -414,7 +415,7 @@ export default async function handler(req, res) {
       const ed = extraDescLines.find(e => e.imgIdx === imgIdx);
       if (ed) {
         fillRect(0, y, W, EXTRA_DESC_H, IVORY);
-        wrapText(ed.text, 60, y+50, W-120, 18, BLACK, 8, true, true);
+        wrapText(ed.text, 60, y+70, W-120, 18, BLACK, 8, true, true);
         y += EXTRA_DESC_H;
       }
     }
