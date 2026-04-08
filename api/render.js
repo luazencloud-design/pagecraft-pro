@@ -221,7 +221,7 @@ export default async function handler(req, res) {
       }
     }
     const descH1 = para1 ? descH : 0;
-    const EXTRA_DESC_H = 80;
+    const EXTRA_DESC_H = 140;
     let extraSectionH = 0;
     for (const ed of extraDescLines) { extraSectionH += DIVIDER_PHOTO_H + EXTRA_DESC_H; }
     const usedImgIndices = new Set(extraDescLines.map(e => e.imgIdx));
@@ -414,7 +414,7 @@ export default async function handler(req, res) {
       const ed = extraDescLines.find(e => e.imgIdx === imgIdx);
       if (ed) {
         fillRect(0, y, W, EXTRA_DESC_H, IVORY);
-        wrapText(ed.text, 60, y+28, W-120, 18, BLACK, 8, true, true);
+        wrapText(ed.text, 60, y+50, W-120, 18, BLACK, 8, true, true);
         y += EXTRA_DESC_H;
       }
     }
