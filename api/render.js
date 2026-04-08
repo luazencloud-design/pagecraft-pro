@@ -208,39 +208,31 @@ export default async function handler(req, res) {
     // 구분 이미지 높이 계산 (각각 존재하면 추가)
     const divH = (idx) => hasImg(idx) ? DIVIDER_PHOTO_H : 0;
 
-    // 상세 설명 문단 분리
-    const paras = (d.description||'').split('\n').filter(Boolean);
-    const para1 = paras.length > 0 ? paras[0] : '';
-    const para2 = paras.length > 1 ? paras.slice(1).join('\n') : '';
+    const descStr = Array.isArray(d.description) ? d.description.join('\n') : String(d.description||'');
+    const allDescLines = descStr.split('\n').filter(Boolean);
+    const para1 = allDescLines.length > 0 ? allDescLines[0] : '';
+    const dividerImgIndices = [4, 5, 6, 7, 8, 9];
+    const extraDescLines = [];
+    let descLineIdx = 1;
+    for (const imgIdx of dividerImgIndices) {
+      if (hasImg(imgIdx) && descLineIdx < allDescLines.length) {
+        extraDescLines.push({ imgIdx, text: allDescLines[descLineIdx] });
+        descLineIdx++;
+      }
+    }
     const descH1 = para1 ? descH : 0;
-    const descH2 = para2 ? descH : 0;
-
-    // ── 전체 높이 계산 ──
-    // 레이아웃 순서:
-    // 1. 헤더 (heroH)
-    // 2. 이미지1 - 메인 (mainH)
-    // 3. 메인 카피 (copyH)
-    // 4. 이미지4 (divH(3))
-    // 5. 이미지8 (divH(7))
-    // 6. 판매 포인트 (ptH)
-    // 7. 이미지5 (divH(4))
-    // 8. 이미지9 (divH(8))
-    // 9. 상세 설명 1문단 (descH1)
-    // 10. 이미지6 (divH(5))
-    // 11. 상세 설명 2문단 (descH2)
-    // 12. 이미지7 (divH(6))
-    // 13. 이미지10 (divH(9))
-    // 14. 컬러 선택 (lbl2H + colorH)
-    // 15. 스펙 표 (specH)
-    // 16. 키워드 (kwH)
-    // 17. 주의사항 (cautH)
-    // 18. 푸터 (footH)
+    const EXTRA_DESC_H = 80;
+    let extraSectionH = 0;
+    for (const ed of extraDescLines) { extraSectionH += DIVIDER_PHOTO_H + EXTRA_DESC_H; }
+    const usedImgIndices = new Set(extraDescLines.map(e => e.imgIdx));
+    let plainDivH = 0;
+    for (const imgIdx of dividerImgIndices) {
+      if (hasImg(imgIdx) && !usedImgIndices.has(imgIdx)) plainDivH += DIVIDER_PHOTO_H;
+    }
 
     const total = storeH + heroH + mainH + copyH
-      + divH(3) + divH(7) + ptH
-      + divH(4) + divH(8)
-      + descH1 + divH(5) + descH2
-      + divH(6) + divH(9)
+      + divH(3) + ptH + descH1
+      + extraSectionH + plainDivH
       + (hasColorImgs ? lbl2H + colorH : 0)
       + specH + kwH + cautH + footH + termsH;
 
@@ -370,19 +362,10 @@ export default async function handler(req, res) {
     }
     y += copyH;
 
-    // ══════════════════════════════════════════════
-    // 4. 이미지 4 — 메인 카피 ↔ 판매 포인트 사이
-    // ══════════════════════════════════════════════
+    // 4. 이미지 4
     y = drawDividerImage(3, y);
 
-    // ══════════════════════════════════════════════
-    // 5. 이미지 8 — 이미지4 ↔ 판매 포인트 사이
-    // ══════════════════════════════════════════════
-    y = drawDividerImage(7, y);
-
-    // ══════════════════════════════════════════════
-    // 6. 판매 포인트
-    // ══════════════════════════════════════════════
+    // 5. 판매 포인트
     fillRect(0, y, W, ptH, BG);
     line(60, y+28, 100, y+28, GOLD, 2);
     text('SELLING POINTS', 108, y+23, GOLD, 10);
@@ -397,67 +380,47 @@ export default async function handler(req, res) {
       line(cx, px+48, cx+colW-10, px+48, LINE);
       ctx.fillStyle = BLACK;
       ctx.font = `700 12px "${fontH}", sans-serif`;
-      ctx.fillText((pts[i]||'').slice(0,10), cx, px+64);
+      const ptTitle = (pts[i]||'');
+      const ptMaxW = colW - 10;
+      let ptText = ptTitle;
+      if (ctx.measureText(ptTitle).width > ptMaxW) {
+        for (let c = ptTitle.length; c > 0; c--) {
+          if (ctx.measureText(ptTitle.slice(0, c)).width <= ptMaxW) { ptText = ptTitle.slice(0, c); break; }
+        }
+      }
+      ctx.fillText(ptText, cx, px+64);
       if (pts[i]) wrapText(pts[i], cx, px+82, colW-10, 11, GRAY, 6);
     }
     y += ptH;
 
-    // ══════════════════════════════════════════════
-    // 7. 이미지 5 — 판매 포인트 ↔ 상세 설명 사이
-    // ══════════════════════════════════════════════
-    y = drawDividerImage(4, y);
-
-    // ══════════════════════════════════════════════
-    // 8. 이미지 9 — 이미지5 ↔ 상세 설명 사이
-    // ══════════════════════════════════════════════
-    y = drawDividerImage(8, y);
-
-    // ══════════════════════════════════════════════
-    // 9. 상세 설명 — 1문단
-    // ══════════════════════════════════════════════
+    // 6. 상세 설명 1문단 (메인 카피처럼 굵고 크게)
     if (para1) {
       fillRect(0, y, W, descH, IVORY);
       line(60, y+36, 100, y+36, GOLD, 2);
       text('PRODUCT STORY', 108, y+31, GOLD, 10);
       let dy = y+60;
-      dy = wrapText(para1, 60, dy, W-120, 13, GRAY, 6);
-      y += descH;
-    }
-
-    // ══════════════════════════════════════════════
-    // 10. 이미지 6 — 상세 설명 1문단 ↔ 2문단 사이
-    // ══════════════════════════════════════════════
-    y = drawDividerImage(5, y);
-
-    // ══════════════════════════════════════════════
-    // 11. 상세 설명 — 2문단
-    // ══════════════════════════════════════════════
-    if (para2) {
-      fillRect(0, y, W, descH, IVORY);
-      line(60, y+36, 100, y+36, GOLD, 2);
-      text('PRODUCT STORY', 108, y+31, GOLD, 10);
-      let dy = y+60;
-      const p2Lines = para2.split('\n').filter(Boolean);
-      for (const pLine of p2Lines) {
-        dy = wrapText(pLine, 60, dy, W-120, 13, GRAY, 6);
-        dy += 14;
+      const p1Lines = String(para1).split('\n');
+      for (const pl of p1Lines) {
+        dy = wrapText(pl, 60, dy, W-120, 18, BLACK, 8, true, true);
       }
       y += descH;
     }
 
-    // ══════════════════════════════════════════════
-    // 12. 이미지 7 — 상세 설명 2문단 ↔ 컬러 선택 사이
-    // ══════════════════════════════════════════════
-    y = drawDividerImage(6, y);
+    // 7~12. 이미지 5~10 + 각각 상세 설명 1줄
+    for (const imgIdx of dividerImgIndices) {
+      if (!hasImg(imgIdx)) continue;
+      fillRect(0, y, W, DIVIDER_PHOTO_H, BG);
+      drawImageCover(loadedImgs[imgIdx], 0, y, W, DIVIDER_PHOTO_H);
+      y += DIVIDER_PHOTO_H;
+      const ed = extraDescLines.find(e => e.imgIdx === imgIdx);
+      if (ed) {
+        fillRect(0, y, W, EXTRA_DESC_H, IVORY);
+        wrapText(ed.text, 60, y+28, W-120, 18, BLACK, 8, true, true);
+        y += EXTRA_DESC_H;
+      }
+    }
 
-    // ══════════════════════════════════════════════
-    // 13. 이미지 10 — 이미지7 ↔ 컬러 선택 사이
-    // ══════════════════════════════════════════════
-    y = drawDividerImage(9, y);
-
-    // ══════════════════════════════════════════════
-    // 14. 컬러 선택 (이미지 2+3 나란히)
-    // ══════════════════════════════════════════════
+    // 13. 컬러 선택
     if (hasColorImgs) {
       fillRect(0, y, W, lbl2H, DARK);
       centerText('COLOR VARIATION  ·  컬러 선택', y+24, YELLOW, 10);
