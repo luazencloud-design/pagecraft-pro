@@ -397,7 +397,19 @@ export default async function handler(req, res) {
       line(cx, px+48, cx+colW-10, px+48, LINE);
       ctx.fillStyle = BLACK;
       ctx.font = `700 12px "${fontH}", sans-serif`;
-      ctx.fillText((pts[i]||'').slice(0,10), cx, px+64);
+      const ptTitle = (pts[i]||'');
+      const maxTitleW = colW - 10;
+      let titleText = ptTitle;
+      if (ctx.measureText(ptTitle).width > maxTitleW) {
+        for (let c = ptTitle.length; c > 0; c--) {
+          const candidate = ptTitle.slice(0, c);
+          if (ctx.measureText(candidate).width <= maxTitleW) {
+            titleText = candidate;
+            break;
+          }
+        }
+      }
+      ctx.fillText(titleText, cx, px+64);
       if (pts[i]) wrapText(pts[i], cx, px+82, colW-10, 11, GRAY, 6);
     }
     y += ptH;
