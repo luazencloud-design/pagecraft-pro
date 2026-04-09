@@ -299,10 +299,19 @@ export default async function handler(req, res) {
     }
 
     // ── 구분 이미지 그리기 공통 함수 (메인 이미지와 동일 양식) ──
+    function drawImageContain(imgObj, dx, dy, dw, dh) {
+      const { img, w: sw, h: sh } = imgObj;
+      const scale = Math.min(dw / sw, dh / sh);
+      const drawW = sw * scale, drawH = sh * scale;
+      const offsetX = dx + (dw - drawW) / 2;
+      const offsetY = dy + (dh - drawH) / 2;
+      ctx.drawImage(img, 0, 0, sw, sh, offsetX, offsetY, drawW, drawH);
+    }
+
     function drawDividerImage(imgIdx, yPos) {
       if (!hasImg(imgIdx)) return yPos;
       fillRect(0, yPos, W, DIVIDER_PHOTO_H, BG);
-      drawImageCover(loadedImgs[imgIdx], 0, yPos, W, DIVIDER_PHOTO_H);
+      drawImageContain(loadedImgs[imgIdx], 0, yPos, W, DIVIDER_PHOTO_H);
       return yPos + DIVIDER_PHOTO_H;
     }
 
@@ -410,7 +419,7 @@ export default async function handler(req, res) {
     for (const imgIdx of dividerImgIndices) {
       if (!hasImg(imgIdx)) continue;
       fillRect(0, y, W, DIVIDER_PHOTO_H, BG);
-      drawImageCover(loadedImgs[imgIdx], 0, y, W, DIVIDER_PHOTO_H);
+      drawImageContain(loadedImgs[imgIdx], 0, y, W, DIVIDER_PHOTO_H);
       y += DIVIDER_PHOTO_H;
       const ed = extraDescLines.find(e => e.imgIdx === imgIdx);
       if (ed) {
